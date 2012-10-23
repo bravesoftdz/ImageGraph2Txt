@@ -8,7 +8,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, table_func_lib, ExtCtrls, ExtDlgs, StdCtrls,coord_system_lib,
-  TeEngine, Series, TeeProcs, Chart,Clipbrd, ComCtrls,math, Buttons,GraphicEx;
+  TeEngine, Series, TeeProcs, Chart,Clipbrd, ComCtrls,math, Buttons,GraphicEx,command_class_lib,
+  imageGraph2Txt_Commands;
 
 type
   TForm1 = class(TForm)
@@ -50,6 +51,11 @@ type
     LabeledEdit3: TLabeledEdit;
     Memo1: TMemo;
     Label3: TLabel;
+    TabSheet4: TTabSheet;
+    lstCommands: TListBox;
+    Label4: TLabel;
+    btnUndo: TButton;
+    btnRedo: TButton;
     procedure Button1Click(Sender: TObject);
     procedure CheckBox1Click(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -84,6 +90,8 @@ type
     procedure LabeledEdit2Change(Sender: TObject);
     procedure LabeledEdit3Change(Sender: TObject);
     procedure Memo1Change(Sender: TObject);
+    procedure btnUndoClick(Sender: TObject);
+    procedure btnRedoClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -108,9 +116,43 @@ var
   mouse_down: boolean;
   start_P: TPoint;
   cur_P: TPoint;
+
+  undo_list: TCommandList;
 implementation
 
 {$R *.dfm}
+procedure refresh_undo_gui;
+var i: Integer;
+begin
+  with Form1 do begin
+    btnUndo.Enabled:=undo_list.UndoEnabled;
+    btnRedo.Enabled:=undo_list.RedoEnabled;
+    lstCommands.Clear;
+    for i:=0 to Length(undo_list.commands)-1 do begin
+      lstCommands.AddItem(undo_list.commands[i].caption,nil);
+    end;
+    lstCommands.ItemIndex:=undo_list.cur-1;
+    txtX0.Text:=FloatToStr(c.x0);
+    txtY0.Text:=FloatToStr(c.y0);
+    txtXmax.Text:=FloatToStr(c.xmax);
+    txtYmax.Text:=FloatToStr(c.ymax);
+    chkXLog.Checked:=c.log_Xaxis;
+    chkYLog.Checked:=c.log_Yaxis;
+    chkSwapXY.Checked:=c.swapXY;
+  end;
+end;
+
+
+procedure dispatch_command(command: TAbstractCommand);
+begin
+  if command.Execute then begin
+    undo_list.Add(command);
+    refresh_undo_gui;
+  end
+  else
+    command.Free;
+end;
+
 
 procedure kill_selection;
 //убрать выделение
@@ -152,12 +194,12 @@ var i,xt,yt,xmin,xmax: Integer;
 begin
   reset_picture;
   c.draw;
-  if (c.t.enabled) and (c.status) then begin
+  if (c.t.enabled) and (c.status) and (c.xmax<>c.x0) and (c.ymax<>c.y0) then begin
+      form1.Image1.Canvas.Pen.Width:=2;
+      form1.Image1.Canvas.Pen.Color:=c.line_color;
     if c.swapXY then begin
       yt:=round(c.Y_axis2pix(c.t.xmax));
       xt:=round(c.X_axis2pix(c.t[c.t.xmax]));
-      form1.Image1.Canvas.Pen.Width:=2;
-      form1.Image1.Canvas.Pen.Color:=c.line_color;
       form1.Image1.Canvas.MoveTo(xt,yt);
       xmin:=yt;
       xmax:=round(c.Y_axis2pix(c.t.xmin));
@@ -168,8 +210,6 @@ begin
     else begin
       xt:=round(c.X_axis2pix(c.t.xmin));
       yt:=round(c.Y_axis2pix(c.t[c.t.xmin]));
-      form1.Image1.Canvas.Pen.Width:=2;
-      form1.Image1.Canvas.Pen.Color:=c.line_color;
       form1.Image1.Canvas.MoveTo(xt,yt);
       xmin:=xt;
       xmax:=round(c.X_axis2pix(c.t.xmax));
@@ -213,6 +253,7 @@ end;
 
 procedure TForm1.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
+var command: TAbstractCommand;
 begin
   Case state of
   1: begin
@@ -236,10 +277,11 @@ begin
     end;
    end;
   5: begin
-    c.AddPoint(X,Y);
+    command:=TAddPointCommand.Create(c,X,Y);
+    dispatch_command(command);
     repaint_graph;
    end;
-    
+
   end;
 end;
 
@@ -250,6 +292,9 @@ c:=coord_system.Create;
 c.image:=image1;
 btmp:=TBitmap.Create;
 pic:=TPicture.Create;
+
+undo_list:=TCommandList.Create(nil);
+//lstCommands.ItemIndex:=0;
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -257,15 +302,17 @@ begin
 c.Free;
 btmp.Free;
 pic.Free;
+
+undo_list.Free;
 end;
 
 procedure TForm1.txtX0Change(Sender: TObject);
 var x: Extended;
+var command: TAbstractCommand;
 begin
   if TryStrToFloat(txtx0.text,x) then begin
-    c.x0:=x;
+    dispatch_command(TChangeFloatCommand.Create(c.change_x0,x,'X0'));
     repaint_graph;
-    
   end;
 end;
 
@@ -273,7 +320,7 @@ procedure TForm1.txtY0Change(Sender: TObject);
 var y: Extended;
 begin
   if TryStrToFloat(txty0.Text,y) then begin
-    c.y0:=y;
+    dispatch_command(TChangeFloatCommand.Create(c.change_y0,y,'Y0'));
     repaint_graph;
   end;
 end;
@@ -282,7 +329,7 @@ procedure TForm1.txtXmaxChange(Sender: TObject);
 var x: Extended;
 begin
   if TryStrToFloat(txtXmax.Text,x) then begin
-    c.xmax:=x;
+    dispatch_command(TChangeFloatCommand.Create(c.change_xmax,x,'Xmax'));
     repaint_graph;
   end;
 end;
@@ -291,7 +338,7 @@ procedure TForm1.txtYmaxChange(Sender: TObject);
 var y: Extended;
 begin
   if TryStrToFloat(txtYmax.Text,y) then begin
-    c.ymax:=y;
+    dispatch_command(TChangeFloatCommand.Create(c.change_ymax,y,'Ymax'));
     repaint_graph;
   end;
 end;
@@ -314,19 +361,21 @@ end;
 
 procedure TForm1.chkYLogClick(Sender: TObject);
 begin
-  c.log_Yaxis:=chkYLog.Checked;
+  Dispatch_command(TChangeBoolCommand.Create(c.log_Yaxis,c.invert_bool,chkYLog.Checked,'Log y'));
+//  c.log_Yaxis:=chkYLog.Checked;
   repaint_graph;
 end;
 
 procedure TForm1.chkXLogClick(Sender: TObject);
 begin
-  c.log_Xaxis:=chkXLog.Checked;
+  Dispatch_command(TChangeBoolCommand.Create(c.log_Xaxis,c.invert_bool,chkXLog.Checked,'Log X'));
+//  c.log_Xaxis:=chkXLog.Checked;
   repaint_graph;
 end;
 
 procedure TForm1.chkSwapXYClick(Sender: TObject);
 begin
-  c.swapXY:=chkSwapXY.Checked;
+  dispatch_command(TChangeBoolCommand.Create(c.swapXY,c.invert_bool,chkSwapXY.Checked,'SwapXY'));
   repaint_graph;
 end;
 
@@ -335,11 +384,8 @@ begin
   chkSwapXYClick(Form1);
   chkXLogClick(Form1);
   chkYLogClick(Form1);
-  txtYMaxChange(Form1);
-  txtY0Change(Form1);
-  txtX0Change(Form1);
-  txtXMaxChange(Form1);
   Form1.WindowState:=wsMaximized;
+  refresh_undo_gui;
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);
@@ -515,6 +561,20 @@ end;
 procedure TForm1.Memo1Change(Sender: TObject);
 begin
   c.t.description:=Memo1.Text;
+end;
+
+procedure TForm1.btnUndoClick(Sender: TObject);
+begin
+  undo_list.Undo;
+  refresh_undo_gui;
+  repaint_graph;
+end;
+
+procedure TForm1.btnRedoClick(Sender: TObject);
+begin
+  undo_list.Redo;
+  refresh_undo_gui;
+  repaint_graph;
 end;
 
 end.

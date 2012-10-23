@@ -10,7 +10,11 @@ uses
   GraphicCompression in '..\GraphicEx\GraphicCompression.pas',
   GraphicStrings in '..\GraphicEx\GraphicStrings.pas',
   JPG in '..\GraphicEx\JPG.pas',
-  table_func_lib in 'table_func_lib.pas';
+  table_func_lib in 'table_func_lib.pas',
+  command_class_lib in 'command_class_lib.pas',
+  ImageGraph2Txt_commands in 'ImageGraph2Txt_commands.pas',
+  streaming_class_lib in 'streaming_class_lib.pas',
+  StreamIO in 'StreamIO.pas';
 
 {$R *.res}
 

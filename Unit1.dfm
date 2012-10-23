@@ -1,8 +1,8 @@
 object Form1: TForm1
-  Left = 323
-  Top = 248
-  Width = 579
-  Height = 257
+  Left = 275
+  Top = 180
+  Width = 581
+  Height = 284
   Caption = 'graph2txt v. 0.04'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,25 +16,25 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnShow = FormShow
   DesignSize = (
-    571
-    223)
+    573
+    250)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
     Left = 8
     Top = 8
-    Width = 558
-    Height = 46
+    Width = 560
+    Height = 73
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     DesignSize = (
-      554
-      42)
+      556
+      69)
     object Image1: TImage
       Left = 0
       Top = 0
-      Width = 558
-      Height = 46
+      Width = 560
+      Height = 73
       Cursor = crCross
       Anchors = [akLeft, akTop, akRight, akBottom]
       OnMouseDown = Image1MouseDown
@@ -44,17 +44,17 @@ object Form1: TForm1
   end
   object PageControl1: TPageControl
     Left = 0
-    Top = 61
-    Width = 565
+    Top = 88
+    Width = 564
     Height = 137
-    ActivePage = TabSheet1
+    ActivePage = TabSheet4
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
     object TabSheet1: TTabSheet
       Caption = #1047#1072#1075#1088#1091#1079#1082#1072' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103
       OnEnter = TabSheet1Enter
       DesignSize = (
-        557
+        556
         109)
       object lblPage1: TLabel
         Left = 376
@@ -349,11 +349,48 @@ object Form1: TForm1
         OnChange = Memo1Change
       end
     end
+    object TabSheet4: TTabSheet
+      Caption = #1048#1089#1090#1086#1088#1080#1103
+      ImageIndex = 3
+      object Label4: TLabel
+        Left = 0
+        Top = 0
+        Width = 106
+        Height = 13
+        Caption = #1055#1086#1089#1083#1077#1076#1085#1080#1077' '#1076#1077#1081#1089#1090#1074#1080#1103
+      end
+      object lstCommands: TListBox
+        Left = 0
+        Top = 16
+        Width = 225
+        Height = 89
+        ItemHeight = 13
+        TabOrder = 0
+      end
+      object btnUndo: TButton
+        Left = 232
+        Top = 8
+        Width = 65
+        Height = 25
+        Caption = #1054#1090#1084#1077#1085#1080#1090#1100
+        TabOrder = 1
+        OnClick = btnUndoClick
+      end
+      object btnRedo: TButton
+        Left = 232
+        Top = 40
+        Width = 65
+        Height = 25
+        Caption = #1055#1086#1074#1090#1086#1088#1080#1090#1100
+        TabOrder = 2
+        OnClick = btnRedoClick
+      end
+    end
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 197
-    Width = 571
+    Top = 224
+    Width = 573
     Height = 26
     Panels = <
       item
@@ -383,7 +420,7 @@ object Form1: TForm1
   object SaveDialog1: TSaveDialog
     DefaultExt = 'bmp'
     Filter = 'BMP file|*.bmp|All files|*.*'
-    Left = 132
+    Left = 348
     Top = 118
   end
 end

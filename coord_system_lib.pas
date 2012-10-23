@@ -13,22 +13,37 @@ type
       function get_nonzero: Boolean;
       function get_status: Boolean;
       //выбраны ли данные точки?
+
+      procedure reprocess_output;
+
     public
       image: TImage;
-      t: table_func;
+      t: table_func;  //выходная, которая в файл пойдет
+      raw_data: table_func; //промежуточная, запоминающая коорд. в пикселях
       log_Xaxis,log_Yaxis :boolean;
       swapXY: boolean;
+
       line_color: TColor;
       procedure set_zero(X: Integer; Y:Integer);
       function set_axis(X: Integer; Y:Integer): Boolean;
-      property x0: Real read dat_x0 write dat_x0;
-      property y0: Real read dat_y0 write dat_y0;
-      property xmax: Real read dat_xmax write dat_xmax;
-      property ymax: Real read dat_ymax write dat_ymax;
+
+      function change_x0(var x: Real): boolean;
+      function change_y0(var y: Real): boolean;
+      function change_xmax(var x: Real): boolean;
+      function change_ymax(var y: Real): boolean;
+
+      property x0: Real read dat_x0;
+      property y0: Real read dat_y0;
+      property xmax: Real read dat_xmax;
+      property ymax: Real read dat_ymax;
+
+      procedure invert_bool(var adr: boolean);
+
       property nonzero: Boolean read get_nonzero;
       property status: Boolean read get_status;
       procedure draw;
-      procedure AddPoint(X: Integer; Y:Integer);
+      function AddPoint(X: Integer; Y:Integer): boolean;
+      function DeletePoint(X: Integer): boolean;
       procedure Clear;
       procedure ClearAxes;
       function X_pix2axis(X: Integer) :Real;
@@ -37,7 +52,7 @@ type
       function Y_axis2pix(Y: Real) :Integer;
 
       constructor Create;
-      destructor Destroy;
+      destructor Destroy; override;
     end;
 
 
@@ -45,13 +60,17 @@ implementation
 constructor coord_system.Create;
 begin
   inherited Create;
+  dat_xmax:=10;
+  dat_ymax:=10;
   t:=table_func.Create;
+  raw_data:=table_func.Create;
   line_color:=clBlack;
 end;
 
 destructor coord_system.Destroy;
 begin
   t.Free;
+  raw_data.Free;
   inherited Destroy;
 end;
 
@@ -156,12 +175,82 @@ begin
     Y_pix2axis:=dat_y0+(dat_ymax-dat_y0)/(pix_ymax-pix_y0)*(Y-pix_y0);
 end;
 
-procedure coord_system.AddPoint(X: Integer; Y:Integer);
-var dat_x,dat_y: Real;
+function coord_system.AddPoint(X: Integer; Y:Integer): boolean;
 begin
-  if swapXY then t.addpoint(Y_pix2axis(Y),X_pix2axis(X))
-  else t.addpoint(X_pix2axis(X),Y_pix2axis(Y));
+  result:=raw_data.addpoint(X,Y);
+  if result then begin
+    if swapXY then t.addpoint(Y_pix2axis(Y),X_pix2axis(X))
+    else t.addpoint(X_pix2axis(X),Y_pix2axis(Y));
+  end;
 end;
 
+function coord_system.DeletePoint(X: Integer): Boolean;
+begin
+  result:=raw_data.deletepoint(X);
+  if result then reprocess_output;
+end;
+
+function coord_system.change_x0(var x: Real): boolean;
+var tmp: Real;
+begin
+  Result:=(dat_x0<>x);
+  if Result then begin
+    tmp:=dat_x0;
+    dat_x0:=x;
+    x:=tmp;
+    reprocess_output;
+  end;
+end;
+
+function coord_system.change_y0(var y: Real): boolean;
+var tmp: Real;
+begin
+  Result:=(dat_y0<>y);
+  if Result then begin
+    tmp:=dat_y0;
+    dat_y0:=y;
+    y:=tmp;
+    reprocess_output;
+  end;
+end;
+
+function coord_system.change_xmax(var x: Real): boolean;
+var tmp: Real;
+begin
+  Result:=(dat_xmax<>x);
+  if Result then begin
+    tmp:=dat_xmax;
+    dat_xmax:=x;
+    x:=tmp;
+    reprocess_output;
+  end;
+end;
+
+function coord_system.change_ymax(var y: Real): boolean;
+var tmp: Real;
+begin
+  Result:=(dat_ymax<>y);
+  if Result then begin
+    tmp:=dat_ymax;
+    dat_ymax:=y;
+    y:=tmp;
+    reprocess_output;
+  end;
+end;
+
+procedure coord_system.reprocess_output;
+var i,L: Integer;
+begin
+  t.Clear;
+  L:=length(raw_data.X)-1;
+  if swapXY then for i:=0 to L do t.addpoint(Y_pix2axis(Round(raw_data.Y[i])),X_pix2axis(Round(raw_data.X[i])))
+  else for i:=0 to L do t.addpoint(X_pix2axis(Round(raw_data.X[i])),Y_pix2axis(Round(raw_data.Y[i])));
+end;
+
+procedure coord_system.invert_bool(var adr: boolean);
+begin
+  adr:=not adr;
+  reprocess_output;
+end;
 
 end.

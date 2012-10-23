@@ -1,6 +1,15 @@
 unit table_func_lib;
 (*
-version 0.72
+version 0.8
+изменени€ в 0.81
+- процедура addpoint стала функцией - возращает true, если точка была добавлена, false, если така€ точка уже существовала
+- нова€ функци€ deletepoint - удал€ет заданную точку.
+
+изменени€ в 0.8
+- теперь это производна€ от класса TStreamingClass
+- можно хранить в составе других объектов
+- новое свойство zero_out_of_bounds. ≈сли true, вне области определени€ возращает ноль. ≈сли false - то значение от ближайшей точки.
+
 изменени€ в 0.72
 - позвол€ет на любом компьютере, независимо от региональных настроек, работать как с
 точкой, так и с зап€той в роли разделител€ целой и дробной части
@@ -116,14 +125,17 @@ value:=func.integrate;
 *)
 
 interface
-uses SysUtils,math,TeEngine, Series, ExtCtrls, TeeProcs, Chart,classes;
+uses SysUtils,math,TeEngine, Series, ExtCtrls, TeeProcs, Chart,classes,streaming_class_lib,streamio;
+
 type
-  table_func=class(TPersistent)
+  table_func=class(TstreamingClass)
     private
+
     ixmin,ixmax,iymin,iymax: Real;
     b,c,d :array of Real;  {a==Y}
     istep: Real;
     iOrder: Integer;
+    _oub: Boolean;
     changed: boolean;
     function splinevalue(xi:Real): Real;
     procedure update_spline();
@@ -134,7 +146,11 @@ type
     function get_xmax: Real;
     function get_ymin: Real;
     function get_ymax: Real;
-    public
+
+    function _tostr: string;
+    procedure _fromstr(dat: string);
+
+      public
     X,Y: array of Real;
     chart_series: TLineSeries;
     title: string;
@@ -152,14 +168,18 @@ type
     property ymax: Real read get_ymax;
     property value[xi: Real]: Real read splinevalue; default;
     property order: Integer read iorder write update_order;
+    property zero_out_of_bounds: boolean read _oub write _oub; //поведение за границами обл. опред
+
     function LoadFromFile(filename: string): Boolean;
-    function OldLoadFromFile(filename: string): Boolean;
     procedure LoadConstant(new_Y:Real;new_xmin:Real;new_xmax:Real);
     procedure Clear;
     function SaveToFile(filename: string): Boolean;
     procedure normalize();
-    procedure addpoint(Xn:Real;Yn:Real);
+    function addpoint(Xn:Real;Yn:Real): boolean;
+    function deletepoint(Xn: Real): boolean;
+
     property enabled: Boolean read isen;
+    //constructor Create(owner: TComponent); overload; override;
     constructor Create; overload;
     constructor Create(filename: string); overload;
     procedure draw;
@@ -168,23 +188,38 @@ type
     procedure assign(Source:TPersistent); override;
     function integrate: Real;
     procedure morepoints;
+      published
+    property data: string read _tostr write _fromstr;
+
     end;
 implementation
+const eol: string=#13+#10;
 
 constructor table_func.Create;
 begin
-  inherited Create;
+  inherited Create(nil);
+  iorder:=3;
+  chart_series:=nil;
+  changed:=true;
+  _oub:=true;
+end;
+(*
+constructor table_func.Create(owner: TComponent);
+begin
+  inherited Create(owner);
   iorder:=3;
   chart_series:=nil;
   changed:=false;
 end;
-
+*)
 constructor table_func.Create(filename: string);
 begin
-  inherited Create;
+  inherited Create(owner);
   iorder:=3;
+  _oub:=true;
   LoadFromFile(filename);
   chart_series:=nil;
+  changed:=true;
 end;
 
 function table_func.isen: Boolean;
@@ -200,11 +235,11 @@ begin
   if changed then update_spline;
 
   if xi>xmax then begin
-    splinevalue:=0;
+    if _oub then splinevalue:=0 else splinevalue:=Y[High(Y)];
     exit;
   end
   else if xi<xmin then begin
-    splinevalue:=0;
+    if _oub then splinevalue:=0 else splinevalue:=Y[0];
     exit;
   end;
   
@@ -325,23 +360,31 @@ iOrder:=new_value;
 changed:=true;
 end;
 
-procedure table_func.addpoint(Xn:Real;Yn:Real);
+function table_func.addpoint(Xn:Real;Yn:Real): boolean;
 var i,k,l: Integer;
 begin
   l:=Length(X);
   i:=0;
   SetLength(X,l+1);
   SetLength(Y,l+1);
-  X[l]:=Xn+1;
+  X[l]:=Xn+1; //чтобы этот элемент был заведомо больше
   while (Xn>X[i]) do inc(i);
   //i будет указывать на максимальный элемент, меньший Xn
   //проверим, а вдруг совпадает
   if Xn=X[i] then begin
-    X[i]:=Xn;
-    Y[i]:=Yn;
-    SetLength(X,l);
-    SetLength(Y,l);
-    Exit;
+    if Yn=Y[i] then begin
+      result:=false; //ничего не изменилось
+      exit;
+    end
+    else begin
+      X[i]:=Xn;
+      Y[i]:=Yn;
+      SetLength(X,l);
+      SetLength(Y,l);
+      changed:=true;
+      result:=true;
+      Exit;
+    end;
   end;
   //теперь вставл€ем в нужное место
   k:=l-1;
@@ -353,23 +396,49 @@ begin
   X[i]:=Xn;
   Y[i]:=Yn;
   changed:=true;
+  result:=true;
 end;
 
-function table_func.LoadFromFile(filename: string): Boolean;
+function table_func.deletepoint(Xn: Real): boolean;
+var i,k,l: Integer;
+begin
+  l:=Length(X);
+  i:=0;
+  while (Xn<>X[i]) do begin
+    inc(i);
+    if i=l then begin
+      result:=false;
+      exit;
+    end;
+  end;
+  //на этом месте i указывает на элемент, который надо удалить.
+  k:=l-1;
+  while i<k do begin
+  X[i]:=X[i+1];
+  Y[i]:=Y[i+1];
+  inc(i);
+  end;
+  SetLength(X,k);
+  SetLength(Y,k);
+  changed:=true;
+  result:=true;
+end;
+
+
+procedure table_func._fromstr(dat: string);
 var F: TextFile;
+    d: TStringStream;
     s0,s,t: string;
     i,j,k: Integer;
     section: (general,descr,data);
     separator: char;
     formatSettings : TFormatSettings;
 begin
-try
   GetLocaleFormatSettings($0800, formatSettings);
   separator:=formatsettings.DecimalSeparator;
-
-  LoadFromFile:=false;
-  assignFile(F,filename);
-  Reset(F);
+  d:=TStringStream.Create(dat);
+  AssignStream(F,d);
+    Reset(F);
   Setlength(X,1);
   SetLength(Y,1);
   section:=data;
@@ -442,39 +511,68 @@ try
     {вычислим мин. и макс. значени€}
     changed:=true;
     {“еперь определить макс/мин значени€, посчитать коэф. сплайнов}
-    LoadFromFile:=true;
-    end
-    else LoadFromFile:=false;
-finally
-Closefile(F);
-end;
+    end;
+
 end;
 
-
-function table_func.OldLoadFromFile(filename:string): Boolean;
+function table_func.LoadFromFile(filename: string): Boolean;
 var F: TextFile;
-    s: string;
+    s0,s,t: string;
     i,j,k: Integer;
-
+    section: (general,descr,data);
+    separator: char;
+    formatSettings : TFormatSettings;
 begin
 try
-  OldLoadFromFile:=false;
+  GetLocaleFormatSettings($0800, formatSettings);
+  separator:=formatsettings.DecimalSeparator;
+
+  LoadFromFile:=false;
   assignFile(F,filename);
   Reset(F);
   Setlength(X,1);
   SetLength(Y,1);
+  section:=data;
   i:=0;
+
+
+
   repeat
-    Readln(F,s);
-    {check if this is commentary}
-    if ((s[1]<>'/') or (s[2]<>'/')) and (s[1]<>'[') and (length(s)>2) then begin
+    ReadLn(F,s);
+    //пропустим пробелы и табул€цию
+    j:=1;
+      while (j<=Length(s)) and ((s[j]=' ') or (s[j]=#9)) do inc(j);
+    //и в конце строки тоже
+    k:=Length(s);
+      while (k>=j) and ((s[k]=' ') and (s[k]=#9)) do dec(k);
+    t:=copy(s,j,k+1-j);
+    s0:=uppercase(t);
+    if (s0='[GENERAL]') then begin section:=general; continue; end;
+    if (s0='[DESCRIPTION]') then begin section:=descr; continue; end;
+    if (s0='[DATA]') then begin section:=data; continue; end;
+    if section=general then begin
+      k:=Length(t);
+      s0:=copy(s0,1,6);
+      if (s0='TITLE=') then begin title:=copy(t,7,k); continue; end;
+      if (s0='XNAME=') then begin Xname:=copy(t,7,k); continue; end;
+      if (s0='YNAME=') then begin Yname:=copy(t,7,k); continue; end;
+      if (s0='XUNIT=') then begin Xunit:=copy(t,7,k); continue; end;
+      if (s0='YUNIT=') then begin Yunit:=copy(t,7,k); continue; end;
+      if (s0='ORDER=') then begin order:=StrToInt(copy(t,7,k)); continue; end;
+      if (s0='BOUND=') then begin _oub:=(StrToInt(copy(t,7,k))=1); end;
+    end;
+    if section=descr then begin
+      description:=concat(description,s);
+    end;
+    if section=data then begin
+      if ((s[1]<>'/') or (s[2]<>'/')) and (s[1]<>'[') and (length(s)>2) then begin
       {skip spaces}
       j:=1;
       while (j<=Length(s)) and ((s[j]=' ') or (s[j]=#9)) do inc(j);
       {find end of number}
       k:=j;
       while (k<=Length(s)) and ((s[k]<>' ') and (s[k]<>#9)) do begin
-        if s[k]='.' then s[k]:=',';
+        if (s[k]='.') or (s[k]=',') then s[k]:=separator;
         inc(k);
       end;
       {manage dynamic array in asimptotically fast way}
@@ -490,25 +588,61 @@ try
       {find end of number}
       k:=j;
       while (k<=Length(s)) and ((s[k]<>' ') and (s[k]<>#9)) do begin
-          if s[k]='.' then s[k]:=',';
+          if (s[k]='.') or (s[k]=',') then s[k]:=separator;
           inc(k);
       end;
       Y[i]:=StrToFloat(copy(s,j,k-j));
       inc(i);
     end;
+  end;
+
   until eof(F);
-  if i>0 then begin
+    if i>0 then begin
     Setlength(X,i);
     SetLength(Y,i);
     {вычислим мин. и макс. значени€}
     changed:=true;
     {“еперь определить макс/мин значени€, посчитать коэф. сплайнов}
-  OldLoadFromFile:=true;
-  end
-  else OldLoadFromFile:=false;
+    LoadFromFile:=true;
+    end
+    else LoadFromFile:=false;
 finally
 Closefile(F);
 end;
+end;
+
+
+function table_func._tostr: string;
+var i: Integer;
+    old_format: boolean;
+    tmp: string;
+begin
+  tmp:='';
+  old_format:=true;
+  if (title<>'') or (Xname<>'') or (Yname<>'') or (Xunit<>'') or (Yunit<>'') or (iorder<>3) then
+    begin
+      tmp:=tmp+'[general]'+eol;
+      tmp:=tmp+'title='+title+eol;
+      tmp:=tmp+'Xname='+Xname+eol;
+      tmp:=tmp+'Yname='+Yname+eol;
+      tmp:=tmp+'Xunit='+Xunit+eol;
+      if (Yunit<>'') then tmp:=tmp+'Yunit='+Yunit+eol;
+      tmp:=tmp+'order='+IntToStr(order)+eol;
+      old_format:=false;
+    end;
+  if (description<>'') then
+    begin
+      tmp:=tmp+'[description]'+eol;
+      tmp:=tmp+description+eol;
+      old_format:=false;
+    end;
+  if (old_format=false) then tmp:=tmp+'[data]'+eol;
+
+
+  for i:=0 to Length(X)-1 do begin
+      tmp:=tmp+FloatToStr(X[i])+#9+FloatToStr(Y[i])+eol;
+  end;
+  result:=tmp;
 end;
 
 function table_func.SaveToFile(filename: string): Boolean;
@@ -520,30 +654,7 @@ begin
   SaveToFile:=false;
   assignFile(F,filename);
   Rewrite(F);
-  old_format:=true;
-  if (title<>'') or (Xname<>'') or (Yname<>'') or (Xunit<>'') or (Yunit<>'') or (iorder<>3) then
-    begin
-      Writeln(F,'[general]');
-      if (title<>'') then WriteLn(F,'title='+title);
-      if (Xname<>'') then WriteLn(F,'Xname='+Xname);
-      if (Yname<>'') then Writeln(F,'Yname='+Yname);
-      if (Xunit<>'') then Writeln(F,'Xunit='+Xunit);
-      if (Yunit<>'') then WriteLn(F,'Yunit='+Yunit);
-      WriteLn(F,'order='+IntToStr(order));
-      old_format:=false;
-    end;
-  if (description<>'') then
-    begin
-      Writeln(F,'[description]');
-      Writeln(F,description);
-      old_format:=false;
-    end;
-  if (old_format=false) then WriteLn(F,'[data]');
-
-
-  for i:=0 to Length(X)-1 do begin
-    Writeln(F,FloatToStr(X[i])+#9+FloatToStr(Y[i]));
-  end;
+  writeln(F,data);
   SaveToFile:=true;
   finally
   Closefile(F);
@@ -757,5 +868,8 @@ begin
   if changed then update_spline;
   get_ymax:=iymax;
 end;
+
+initialization
+RegisterClass(Table_func);
 
 end.
