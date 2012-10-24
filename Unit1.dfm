@@ -1,8 +1,8 @@
 object Form1: TForm1
   Left = 275
-  Top = 180
-  Width = 581
-  Height = 284
+  Top = 74
+  Width = 772
+  Height = 390
   Caption = 'graph2txt v. 0.04'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,25 +16,25 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnShow = FormShow
   DesignSize = (
-    573
-    250)
+    756
+    354)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
     Left = 8
     Top = 8
-    Width = 560
-    Height = 73
+    Width = 751
+    Height = 179
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     DesignSize = (
-      556
-      69)
+      747
+      175)
     object Image1: TImage
       Left = 0
       Top = 0
-      Width = 560
-      Height = 73
+      Width = 751
+      Height = 179
       Cursor = crCross
       Anchors = [akLeft, akTop, akRight, akBottom]
       OnMouseDown = Image1MouseDown
@@ -44,17 +44,17 @@ object Form1: TForm1
   end
   object PageControl1: TPageControl
     Left = 0
-    Top = 88
-    Width = 564
+    Top = 194
+    Width = 755
     Height = 137
-    ActivePage = TabSheet4
+    ActivePage = TabSheet3
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
     object TabSheet1: TTabSheet
       Caption = #1047#1072#1075#1088#1091#1079#1082#1072' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103
       OnEnter = TabSheet1Enter
       DesignSize = (
-        556
+        747
         109)
       object lblPage1: TLabel
         Left = 376
@@ -389,8 +389,8 @@ object Form1: TForm1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 224
-    Width = 573
+    Top = 328
+    Width = 756
     Height = 26
     Panels = <
       item

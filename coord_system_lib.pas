@@ -14,7 +14,7 @@ type
       function get_status: Boolean;
       //выбраны ли данные точки?
 
-      procedure reprocess_output;
+
 
     public
       image: TImage;
@@ -24,6 +24,7 @@ type
       swapXY: boolean;
 
       line_color: TColor;
+      procedure reprocess_output;
       procedure set_zero(X: Integer; Y:Integer);
       function set_axis(X: Integer; Y:Integer): Boolean;
 
@@ -46,6 +47,7 @@ type
       function DeletePoint(X: Integer): boolean;
       procedure Clear;
       procedure ClearAxes;
+      procedure ClearAllPoints;
       function X_pix2axis(X: Integer) :Real;
       function Y_pix2axis(Y: Integer) :Real;
       function X_axis2pix(X: Real) :Integer;
@@ -251,6 +253,12 @@ procedure coord_system.invert_bool(var adr: boolean);
 begin
   adr:=not adr;
   reprocess_output;
+end;
+
+procedure coord_system.ClearAllPoints;
+begin
+  raw_data.Clear;
+  t.Clear;
 end;
 
 end.

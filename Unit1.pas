@@ -345,7 +345,8 @@ end;
 
 procedure TForm1.btnResetPointsClick(Sender: TObject);
 begin
-  c.t.Clear;
+  dispatch_command(TClearPointsCommand.Create(c));
+//  c.ClearAllPoints;
   c.t.title:=LabeledEdit1.Text;
   c.t.Xname:=LabeledEdit2.Text;
   c.t.Yname:=LabeledEdit3.Text;

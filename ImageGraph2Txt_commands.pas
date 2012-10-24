@@ -2,7 +2,7 @@ unit ImageGraph2Txt_commands;
 
 interface
 
-uses command_class_lib,coord_system_lib,sysUtils;
+uses command_class_lib,coord_system_lib,sysUtils,table_func_lib;
 
 type
   TchangeFloatFunc=function(var X: Real): boolean of object;
@@ -43,6 +43,17 @@ type
     function Execute: boolean; override;
     function Undo: boolean; override;
     function caption: string; override;
+  end;
+
+  TClearPointsCommand=class(TAbstractCommand)
+  private
+    backup_storage: table_func;
+    _adr: coord_system;
+  public
+    constructor Create(adr: coord_system);
+    function Execute: boolean; override;
+    function Undo: boolean; override;
+    function Caption: string; override;
   end;
 
 implementation
@@ -129,5 +140,35 @@ function TChangeBoolCommand.caption: string;
 begin
   Result:=_name;
 end;
+
+(*
+            ClearPoints
+                                      *)
+constructor TClearPointsCommand.Create(adr: coord_system);
+begin
+  inherited Create(nil);
+  _adr:=adr;
+  backup_storage:=table_func.Create(self);
+end;
+
+function TClearPointsCommand.Execute: boolean;
+begin
+  backup_storage.assign(_adr.raw_data);
+  _adr.ClearAllPoints;
+  Result:=true;
+end;
+
+function TClearPointsCommand.Undo: boolean;
+begin
+  _adr.raw_data.assign(backup_storage);
+  _adr.reprocess_output;
+  Result:=true;
+end;
+
+function TClearPointsCommand.Caption: string;
+begin
+  result:='Удаление точек данных';
+end;
+
 
 end.
