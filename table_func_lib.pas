@@ -1,15 +1,20 @@
 unit table_func_lib;
 (*
-version 0.8
+version 0.81
 изменения в 0.81
-- процедура addpoint стала функцией - возращает true, если точка была добавлена, false, если такая точка уже существовала
-- новая функция deletepoint - удаляет заданную точку.
+- допустимы пустые строки в секции [data]
+- улучшено сохранение в файл и в строку, устранена избыточность в процедурах загрузки
+- ускорено выполнение процедуры AddPoint - поиск места, куда надо вставить точку - двоичный.
+- переделан формат сохранения в составе других объектов, для большей читаемости
+- убрана за ненадобностью переменная step - надоела! 
 
+version 0.8
 изменения в 0.8
 - теперь это производная от класса TStreamingClass
 - можно хранить в составе других объектов
 - новое свойство zero_out_of_bounds. Если true, вне области определения возращает ноль. Если false - то значение от ближайшей точки.
 
+version 0.72
 изменения в 0.72
 - позволяет на любом компьютере, независимо от региональных настроек, работать как с
 точкой, так и с запятой в роли разделителя целой и дробной части
@@ -125,23 +130,32 @@ value:=func.integrate;
 *)
 
 interface
-uses SysUtils,math,TeEngine, Series, ExtCtrls, TeeProcs, Chart,classes,streaming_class_lib,streamio;
+uses SysUtils,math,TeEngine, Series, ExtCtrls, TeeProcs, Chart,classes,streaming_class_lib,streamio,simple_parser_lib;
 
 type
   table_func=class(TstreamingClass)
     private
+    _title: string;
+    _Xname: string;
+    _Yname: string;
+    _Xunit: string;
+    _Yunit: string;
+    _description: string;
+    iOrder: Integer;
+
+    _length: Integer;
+    allocated_length: Integer;
 
     ixmin,ixmax,iymin,iymax: Real;
     b,c,d :array of Real;  {a==Y}
-    istep: Real;
-    iOrder: Integer;
+
     _oub: Boolean;
     changed: boolean;
+    procedure plus_one; //приготовить место для еще одного числа
     function splinevalue(xi:Real): Real;
     procedure update_spline();
     procedure update_order(new_value: Integer);
     function isen: Boolean;
-    function get_step: Real;
     function get_xmin: Real;
     function get_xmax: Real;
     function get_ymin: Real;
@@ -150,36 +164,27 @@ type
     function _tostr: string;
     procedure _fromstr(dat: string);
 
+    procedure write_to_stream(var F: Textfile);
+    procedure read_from_stream(var F: TextFile);
       public
     X,Y: array of Real;
     chart_series: TLineSeries;
-    title: string;
-    Xname: string;
-    Yname: string;
-    Xunit: string;
-    Yunit: string;
-    description: string;
 
-
-    property step: Real read get_step;
     property xmin: Real read get_xmin;
     property xmax: Real read get_xmax;
     property ymin: Real read get_ymin;
     property ymax: Real read get_ymax;
     property value[xi: Real]: Real read splinevalue; default;
-    property order: Integer read iorder write update_order;
-    property zero_out_of_bounds: boolean read _oub write _oub; //поведение за границами обл. опред
 
     function LoadFromFile(filename: string): Boolean;
     procedure LoadConstant(new_Y:Real;new_xmin:Real;new_xmax:Real);
     procedure Clear;
     function SaveToFile(filename: string): Boolean;
     procedure normalize();
-    function addpoint(Xn:Real;Yn:Real): boolean;
-    function deletepoint(Xn: Real): boolean;
-
+    function addpoint(Xn:Real;Yn:Real): Boolean;
+    function deletepoint(Xn:Real): Boolean;
     property enabled: Boolean read isen;
-    //constructor Create(owner: TComponent); overload; override;
+    constructor Create(owner: TComponent); overload; override;
     constructor Create; overload;
     constructor Create(filename: string); overload;
     procedure draw;
@@ -189,29 +194,52 @@ type
     function integrate: Real;
     procedure morepoints;
       published
+    property title: string read _title write _title;
+    property Xname: string read _Xname write _XName;
+    property Yname: string read _Yname write _Yname;
+    property Xunit: string read _Xunit write _Xunit;
+    property Yunit: string read _Yunit write _Yunit;
+    property Description: string read _description write _description;
+    property order: Integer read iorder write update_order default 3;
+    property zero_out_of_bounds: boolean read _oub write _oub; //поведение за границами обл. опред
+    property count: Integer read _length stored false;
     property data: string read _tostr write _fromstr;
 
     end;
 implementation
 const eol: string=#13+#10;
 
+procedure table_func.plus_one;
+begin
+  inc(_length);
+  if _length>allocated_length then begin
+     allocated_length:=(allocated_length shl 1)+1;
+     SetLength(X,allocated_length);
+     SetLength(Y,allocated_length);
+  end;
+end;
+
+
 constructor table_func.Create;
 begin
   inherited Create(nil);
   iorder:=3;
-  chart_series:=nil;
-  changed:=true;
   _oub:=true;
+  chart_series:=nil;
+  Clear;
+  SetSubComponent(true);
 end;
-(*
+
 constructor table_func.Create(owner: TComponent);
 begin
   inherited Create(owner);
   iorder:=3;
+  _oub:=true;
+  Clear;
   chart_series:=nil;
-  changed:=false;
+  SetSubComponent(true);
 end;
-*)
+
 constructor table_func.Create(filename: string);
 begin
   inherited Create(owner);
@@ -220,11 +248,12 @@ begin
   LoadFromFile(filename);
   chart_series:=nil;
   changed:=true;
+  SetSubComponent(true);
 end;
 
 function table_func.isen: Boolean;
 begin
-  isen:=(Length(X)>0);
+  isen:=(count>0);
 end;
 
 function table_func.splinevalue(xi: Real): Real;
@@ -235,7 +264,7 @@ begin
   if changed then update_spline;
 
   if xi>xmax then begin
-    if _oub then splinevalue:=0 else splinevalue:=Y[High(Y)];
+    if _oub then splinevalue:=0 else splinevalue:=Y[count-1];
     exit;
   end
   else if xi<xmin then begin
@@ -246,7 +275,7 @@ begin
 
   {сначала двоичный поиск нужного отрезка сплайна}
   i:=0;
-  j:=High(X);
+  j:=count-1;
   //цикл может не выполниться, если массив пустой (High(X)=-1)
   if j<i then begin
     splinevalue:=NAN;
@@ -294,11 +323,14 @@ var i,j: Integer;
     h,alpha,l,mu,z: array of Real; {для вычисления сплайнов}
 begin
     changed:=false;
-    i:=Length(X);
-    j:=i-1;
-    Setlength(b,i);
-    Setlength(c,i);
-    Setlength(d,i);
+    j:=count-1;
+    allocated_length:=count;
+    SetLength(X,count); //самое время сократить расход памяти
+    SetLength(Y,count);
+    Setlength(b,count);
+    Setlength(c,count);
+    Setlength(d,count);
+
 //макс и мин значения
     ixmin:=X[0];
     ixmax:=ixmin;
@@ -310,10 +342,6 @@ begin
       if Y[i]<iymin then iymin:=Y[i];
       if Y[i]>iymax then iymax:=Y[i];
     end;
-    istep:=X[1]-X[0];
-    for i:=2 to j do begin
-      if (X[i]-X[i-1])<istep then istep:=X[i]-X[i-1];
-    end;
 //собственно сплайны
     for i:=0 to j do begin
       b[i]:=0;
@@ -322,16 +350,16 @@ begin
     end;
     if iorder=0 then exit
     else begin
-      SetLength(h,j+1);
+      SetLength(h,count);
       for i:=0 to j-1 do h[i]:=X[i+1]-X[i];
       if iorder=1 then begin
         for i:=0 to j-1 do b[i]:=(Y[i+1]-Y[i])/h[i];
         exit;
       end;
-      Setlength(alpha,j+1);
-      SetLength(l,j+1);
-      SetLength(mu,j+1);
-      SetLength(z,j+1);
+      Setlength(alpha,count);
+      SetLength(l,count);
+      SetLength(mu,count);
+      SetLength(z,count);
 
 
       for i:=1 to j-1 do alpha[i]:=3/h[i]*(Y[i+1]-Y[i])-3/h[i-1]*(Y[i]-Y[i-1]);
@@ -360,37 +388,34 @@ iOrder:=new_value;
 changed:=true;
 end;
 
-function table_func.addpoint(Xn:Real;Yn:Real): boolean;
+function table_func.addpoint(Xn:Real;Yn:Real): boolean; //это для правильной работы undo
 var i,k,l: Integer;
 begin
-  l:=Length(X);
-  i:=0;
-  SetLength(X,l+1);
-  SetLength(Y,l+1);
-  X[l]:=Xn+1; //чтобы этот элемент был заведомо больше
-  while (Xn>X[i]) do inc(i);
+  i:=count-1;   //сейчас указывает на последний элемент в массиве
+  plus_one;
+  while (i>=0) and (Xn<X[i]) do dec(i);
   //i будет указывать на максимальный элемент, меньший Xn
   //проверим, а вдруг совпадает
-  if Xn=X[i] then begin
+  if (i>0) and (Xn=X[i]) then begin
+    dec(_length);
     if Yn=Y[i] then begin
       result:=false; //ничего не изменилось
       exit;
     end
     else begin
-      X[i]:=Xn;
       Y[i]:=Yn;
-      SetLength(X,l);
-      SetLength(Y,l);
       changed:=true;
       result:=true;
       Exit;
     end;
   end;
+  //i указывает на максимальный элемент, меньший вставляемого
   //теперь вставляем в нужное место
-  k:=l-1;
-  while k>=i do begin
-  X[k+1]:=X[k];
-  Y[k+1]:=Y[k];
+  inc(i);
+  k:=count-1;
+  while k>i do begin
+  X[k]:=X[k-1];
+  Y[k]:=Y[k-1];
   dec(k);
   end;
   X[i]:=Xn;
@@ -402,11 +427,15 @@ end;
 function table_func.deletepoint(Xn: Real): boolean;
 var i,k,l: Integer;
 begin
-  l:=Length(X);
-  i:=0;
+  if not enabled then begin
+    result:=false;
+    exit;
+  end;
+  l:=count-1;
+  i:=l;
   while (Xn<>X[i]) do begin
-    inc(i);
-    if i=l then begin
+    dec(i);
+    if i=-1 then begin
       result:=false;
       exit;
     end;
@@ -418,17 +447,13 @@ begin
   Y[i]:=Y[i+1];
   inc(i);
   end;
-  SetLength(X,k);
-  SetLength(Y,k);
+  dec(_length);
   changed:=true;
   result:=true;
 end;
 
-
-procedure table_func._fromstr(dat: string);
-var F: TextFile;
-    d: TStringStream;
-    s0,s,t: string;
+procedure table_func.read_from_stream(var F: TextFile);
+var s0,s,t: string;
     i,j,k: Integer;
     section: (general,descr,data);
     separator: char;
@@ -436,15 +461,10 @@ var F: TextFile;
 begin
   GetLocaleFormatSettings($0800, formatSettings);
   separator:=formatsettings.DecimalSeparator;
-  d:=TStringStream.Create(dat);
-  AssignStream(F,d);
-    Reset(F);
-  Setlength(X,1);
-  SetLength(Y,1);
+  Reset(F);
+  _length:=0;
   section:=data;
   i:=0;
-
-
 
   repeat
     ReadLn(F,s);
@@ -473,6 +493,9 @@ begin
       description:=concat(description,s);
     end;
     if section=data then begin
+      if Length(s)=0 then begin
+        if eof(F) then break else continue;
+      end;
       if ((s[1]<>'/') or (s[2]<>'/')) and (s[1]<>'[') and (length(s)>2) then begin
       {skip spaces}
       j:=1;
@@ -484,10 +507,7 @@ begin
         inc(k);
       end;
       {manage dynamic array in asimptotically fast way}
-      if (High(X)<i) then begin
-        Setlength(X,2*Length(X));
-        SetLength(Y,2*Length(Y));
-      end;
+      plus_one;
       {assigning values}
       X[i]:=StrToFloat(copy(s,j,k-j));
       {skip spaces}
@@ -506,143 +526,78 @@ begin
 
   until eof(F);
     if i>0 then begin
-    Setlength(X,i);
-    SetLength(Y,i);
-    {вычислим мин. и макс. значения}
     changed:=true;
     {Теперь определить макс/мин значения, посчитать коэф. сплайнов}
     end;
+end;
 
+
+procedure table_func._fromstr(dat: string);
+var i: Integer;
+    L: Integer;
+    p: TSimpleParser;
+begin
+  p:=TSimpleParser.Create(dat);
+  i:=0;
+  _length:=0;
+  repeat
+    plus_one;
+    p.getChar;
+    X[i]:=p.getFloat;
+    p.getChar;
+    Y[i]:=p.getFloat;
+    p.getChar;
+    inc(i);
+  until p.eof;
+  changed:=true;
 end;
 
 function table_func.LoadFromFile(filename: string): Boolean;
 var F: TextFile;
-    s0,s,t: string;
-    i,j,k: Integer;
-    section: (general,descr,data);
-    separator: char;
-    formatSettings : TFormatSettings;
 begin
-try
-  GetLocaleFormatSettings($0800, formatSettings);
-  separator:=formatsettings.DecimalSeparator;
-
-  LoadFromFile:=false;
-  assignFile(F,filename);
-  Reset(F);
-  Setlength(X,1);
-  SetLength(Y,1);
-  section:=data;
-  i:=0;
-
-
-
-  repeat
-    ReadLn(F,s);
-    //пропустим пробелы и табуляцию
-    j:=1;
-      while (j<=Length(s)) and ((s[j]=' ') or (s[j]=#9)) do inc(j);
-    //и в конце строки тоже
-    k:=Length(s);
-      while (k>=j) and ((s[k]=' ') and (s[k]=#9)) do dec(k);
-    t:=copy(s,j,k+1-j);
-    s0:=uppercase(t);
-    if (s0='[GENERAL]') then begin section:=general; continue; end;
-    if (s0='[DESCRIPTION]') then begin section:=descr; continue; end;
-    if (s0='[DATA]') then begin section:=data; continue; end;
-    if section=general then begin
-      k:=Length(t);
-      s0:=copy(s0,1,6);
-      if (s0='TITLE=') then begin title:=copy(t,7,k); continue; end;
-      if (s0='XNAME=') then begin Xname:=copy(t,7,k); continue; end;
-      if (s0='YNAME=') then begin Yname:=copy(t,7,k); continue; end;
-      if (s0='XUNIT=') then begin Xunit:=copy(t,7,k); continue; end;
-      if (s0='YUNIT=') then begin Yunit:=copy(t,7,k); continue; end;
-      if (s0='ORDER=') then begin order:=StrToInt(copy(t,7,k)); continue; end;
-      if (s0='BOUND=') then begin _oub:=(StrToInt(copy(t,7,k))=1); end;
-    end;
-    if section=descr then begin
-      description:=concat(description,s);
-    end;
-    if section=data then begin
-      if ((s[1]<>'/') or (s[2]<>'/')) and (s[1]<>'[') and (length(s)>2) then begin
-      {skip spaces}
-      j:=1;
-      while (j<=Length(s)) and ((s[j]=' ') or (s[j]=#9)) do inc(j);
-      {find end of number}
-      k:=j;
-      while (k<=Length(s)) and ((s[k]<>' ') and (s[k]<>#9)) do begin
-        if (s[k]='.') or (s[k]=',') then s[k]:=separator;
-        inc(k);
-      end;
-      {manage dynamic array in asimptotically fast way}
-      if (High(X)<i) then begin
-        Setlength(X,2*Length(X));
-        SetLength(Y,2*Length(Y));
-      end;
-      {assigning values}
-      X[i]:=StrToFloat(copy(s,j,k-j));
-      {skip spaces}
-      j:=k;
-      while (j<=Length(s)) and ((s[j]=' ') or (s[j]=#9)) do inc(j);
-      {find end of number}
-      k:=j;
-      while (k<=Length(s)) and ((s[k]<>' ') and (s[k]<>#9)) do begin
-          if (s[k]='.') or (s[k]=',') then s[k]:=separator;
-          inc(k);
-      end;
-      Y[i]:=StrToFloat(copy(s,j,k-j));
-      inc(i);
-    end;
-  end;
-
-  until eof(F);
-    if i>0 then begin
-    Setlength(X,i);
-    SetLength(Y,i);
-    {вычислим мин. и макс. значения}
-    changed:=true;
-    {Теперь определить макс/мин значения, посчитать коэф. сплайнов}
-    LoadFromFile:=true;
-    end
-    else LoadFromFile:=false;
-finally
-Closefile(F);
-end;
+  AssignFile(F,filename);
+  read_from_stream(F);
+  CloseFile(F);
 end;
 
 
 function table_func._tostr: string;
 var i: Integer;
-    old_format: boolean;
-    tmp: string;
+    t: string;
 begin
-  tmp:='';
+  for i:=0 to count-1 do
+    t:=t+'('+FloatToStr(X[i])+';'+FloatToStr(Y[i])+') ';
+  Result:=t;
+end;
+
+
+procedure table_func.write_to_stream(var F: Textfile);
+var old_format: boolean;
+    i: Integer;
+begin
+  Rewrite(F);
   old_format:=true;
   if (title<>'') or (Xname<>'') or (Yname<>'') or (Xunit<>'') or (Yunit<>'') or (iorder<>3) then
     begin
-      tmp:=tmp+'[general]'+eol;
-      tmp:=tmp+'title='+title+eol;
-      tmp:=tmp+'Xname='+Xname+eol;
-      tmp:=tmp+'Yname='+Yname+eol;
-      tmp:=tmp+'Xunit='+Xunit+eol;
-      if (Yunit<>'') then tmp:=tmp+'Yunit='+Yunit+eol;
-      tmp:=tmp+'order='+IntToStr(order)+eol;
+      Writeln(F,'[general]');
+      if (title<>'') then Writeln(F,'title='+title);
+      if (Xname<>'') then Writeln(F,'Xname='+Xname);
+      if (Yname<>'') then Writeln(F,'Yname='+Yname);
+      if (Xunit<>'') then Writeln(F,'Xunit='+Xunit);
+      if (Yunit<>'') then WriteLn(F,'Yunit='+Yunit);
+      WriteLn(F,'order='+IntToStr(order));
       old_format:=false;
     end;
   if (description<>'') then
     begin
-      tmp:=tmp+'[description]'+eol;
-      tmp:=tmp+description+eol;
+      WriteLn(F,'[description]');
+      WriteLn(F,description);
       old_format:=false;
     end;
-  if (old_format=false) then tmp:=tmp+'[data]'+eol;
-
-
-  for i:=0 to Length(X)-1 do begin
-      tmp:=tmp+FloatToStr(X[i])+#9+FloatToStr(Y[i])+eol;
+  if (old_format=false) then WriteLn(F,'[data]');
+  for i:=0 to count-1 do begin
+      WriteLn(F,FloatToStr(X[i])+#9+FloatToStr(Y[i]));
   end;
-  result:=tmp;
 end;
 
 function table_func.SaveToFile(filename: string): Boolean;
@@ -653,8 +608,7 @@ begin
   try
   SaveToFile:=false;
   assignFile(F,filename);
-  Rewrite(F);
-  writeln(F,data);
+  write_to_stream(F);
   SaveToFile:=true;
   finally
   Closefile(F);
@@ -668,6 +622,7 @@ begin
     Setlength(b,1);
     Setlength(c,1);
     Setlength(d,1);
+    _length:=1;
     ixmin:=new_xmin;
     ixmax:=new_xmax;
     iymin:=new_Y;
@@ -677,7 +632,6 @@ begin
     b[0]:=0;
     c[0]:=0;
     d[0]:=0;
-    istep:=ixmax-ixmin;
     changed:=false;
 end;
 
@@ -754,8 +708,10 @@ begin
     ixmax:=s.ixmax;
     iymin:=s.iymin;
     iymax:=s.iymax;
-    istep:=s.istep;
     iOrder:=s.iOrder;
+    _oub:=s._oub;
+    _length:=s.count;
+    allocated_length:=_length;
 
     title:=s.title;
     XName:=s.Xname;
@@ -764,11 +720,11 @@ begin
     YUnit:=s.Yunit;
     description:=s.description;
     //chart_series НЕ ТРОГАЕМ! Копируем функцию, но не интерфейс
-    X:=copy(s.X,0,MaxInt);
-    Y:=copy(s.Y,0,MaxInt);
-    b:=copy(s.b,0,MaxInt);
-    c:=copy(s.c,0,MaxInt);
-    d:=copy(s.d,0,MaxInt);
+    X:=copy(s.X,0,count);
+    Y:=copy(s.Y,0,count);
+    b:=copy(s.b,0,count);
+    c:=copy(s.c,0,count);
+    d:=copy(s.d,0,count);
     changed:=true;
   end else
     inherited Assign(Source);
@@ -796,11 +752,12 @@ begin
   SetLength(b,0);
   SetLength(c,0);
   SetLength(d,0);
+  _length:=0;
+  allocated_length:=0;
   ixmin:=0;
   ixmax:=0;
   iymin:=0;
   iymax:=0;
-  istep:=0;
   title:='';
   Xname:='';
   Yname:='';
@@ -837,12 +794,6 @@ for k:=j downto 1 do begin
   dec(i);
 end;
 changed:=true;
-end;
-
-function table_func.get_step :Real;
-begin
-  if changed then update_spline;
-  get_step:=istep;
 end;
 
 function table_func.get_xmin :Real;

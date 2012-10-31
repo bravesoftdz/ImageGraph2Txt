@@ -244,7 +244,7 @@ procedure coord_system.reprocess_output;
 var i,L: Integer;
 begin
   t.Clear;
-  L:=length(raw_data.X)-1;
+  L:=raw_data.count-1;
   if swapXY then for i:=0 to L do t.addpoint(Y_pix2axis(Round(raw_data.Y[i])),X_pix2axis(Round(raw_data.X[i])))
   else for i:=0 to L do t.addpoint(X_pix2axis(Round(raw_data.X[i])),Y_pix2axis(Round(raw_data.Y[i])));
 end;

@@ -92,7 +92,6 @@ constructor TstreamingClass.LoadFromFile(filename: string);
 var
   FileStream: TFileStream;
   BinStream: TMemoryStream;
-  tmp: TComponent;
 begin
   FileStream := TFileStream.Create(filename, fmOpenRead	);
   try
@@ -141,6 +140,7 @@ end;
 procedure TstreamingClass.SaveBinaryToFile(filename: string);
 var FileStream: TFileStream;
 begin
+  FileStream:=nil;
   try
   FileStream:=TFileStream.Create(filename,fmCreate);
   FileStream.WriteComponent(Self);

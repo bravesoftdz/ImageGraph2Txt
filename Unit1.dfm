@@ -16,8 +16,8 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnShow = FormShow
   DesignSize = (
-    756
-    354)
+    764
+    356)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
@@ -47,7 +47,7 @@ object Form1: TForm1
     Top = 194
     Width = 755
     Height = 137
-    ActivePage = TabSheet3
+    ActivePage = TabSheet1
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
     object TabSheet1: TTabSheet
@@ -389,8 +389,8 @@ object Form1: TForm1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 328
-    Width = 756
+    Top = 330
+    Width = 764
     Height = 26
     Panels = <
       item
