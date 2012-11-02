@@ -396,7 +396,7 @@ begin
   while (i>=0) and (Xn<X[i]) do dec(i);
   //i будет указывать на максимальный элемент, меньший Xn
   //проверим, а вдруг совпадает
-  if (i>0) and (Xn=X[i]) then begin
+  if (i>=0) and (Xn=X[i]) then begin
     dec(_length);
     if Yn=Y[i] then begin
       result:=false; //ничего не изменилось
