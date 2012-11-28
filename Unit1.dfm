@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 275
-  Top = 74
+  Left = 305
+  Top = 431
   Width = 772
   Height = 390
   Caption = 'graph2txt v. 0.04'
@@ -21,19 +21,19 @@ object Form1: TForm1
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
-    Left = 8
+    Left = 0
     Top = 8
-    Width = 751
+    Width = 759
     Height = 179
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     DesignSize = (
-      747
+      755
       175)
     object Image1: TImage
       Left = 0
       Top = 0
-      Width = 751
+      Width = 759
       Height = 179
       Cursor = crCross
       Anchors = [akLeft, akTop, akRight, akBottom]
@@ -47,7 +47,7 @@ object Form1: TForm1
     Top = 194
     Width = 755
     Height = 137
-    ActivePage = TabSheet1
+    ActivePage = TabSheet4
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
     object TabSheet1: TTabSheet
@@ -384,6 +384,15 @@ object Form1: TForm1
         Caption = #1055#1086#1074#1090#1086#1088#1080#1090#1100
         TabOrder = 2
         OnClick = btnRedoClick
+      end
+      object Button3: TButton
+        Left = 320
+        Top = 40
+        Width = 105
+        Height = 25
+        Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1074' '#1092#1072#1081#1083
+        TabOrder = 3
+        OnClick = Button3Click
       end
     end
   end

@@ -2,7 +2,7 @@ unit ImageGraph2Txt_commands;
 
 interface
 
-uses command_class_lib,coord_system_lib,sysUtils,table_func_lib;
+uses command_class_lib,coord_system_lib,sysUtils,table_func_lib,classes;
 
 type
   TchangeFloatFunc=function(var X: Real): boolean of object;
@@ -10,26 +10,33 @@ type
 
   TAddPointCommand=class(TAbstractCommand)
   private
-    _t: coord_system; //ссылка на таблицу, куда добавляем
+    _t: Tcoord_system; //ссылка на таблицу, куда добавляем
     _x,_y: Integer; //точка, которую мы и хотели добавить
   public
-    constructor Create(t: coord_system;X,Y: Integer);
+    constructor Create(t: Tcoord_system;X,Y: Integer);
 //    destructor Destroy; override;
     function Execute: boolean; override;
     function Undo: boolean; override;
     function caption: string; override;
   end;
-
   TChangeFloatCommand=class(TAbstractCommand)
   private
+    _execute_func: TChangeFloatFunc;
     _func: TchangeFloatFunc;
     _x: Real;
     _name: string;
+    procedure readTitle(reader: TReader);
+    procedure writeTitle(writer: TWriter);
+  protected
+    procedure DefineProperties(filer: TFiler); override;
   public
     constructor Create(func: TchangeFloatFunc;X: Real;name: string);
     function Execute: boolean; override;
     function Undo: boolean; override;
     function caption: string; override;
+  published
+    function change_float(var x: Real): Boolean;
+    property func: TChangeFloatFunc read _execute_func write _execute_func;
   end;
 
   TChangeBoolCommand=class(TAbstractCommand)
@@ -48,19 +55,31 @@ type
   TClearPointsCommand=class(TAbstractCommand)
   private
     backup_storage: table_func;
-    _adr: coord_system;
+    _adr: Tcoord_system;
   public
-    constructor Create(adr: coord_system);
+    constructor Create(adr: Tcoord_system);
     function Execute: boolean; override;
     function Undo: boolean; override;
     function Caption: string; override;
+  end;
+
+  TButtonClickCommand=class(TAbstractCommand)
+  private
+    _onclick: TNotifyEvent;
+  public
+    constructor Create(event: TNotifyEvent);
+    function Execute: boolean; override;
+    function Caption: string; override;
+  published
+    procedure Foobar(sender: TObject);
+    property onclick: TNotifyEvent read _onclick write _onclick;
   end;
 
 implementation
 (*
                   AddPoint
                                         *)
-constructor TAddPointCommand.Create(t: coord_system; X,Y: Integer);
+constructor TAddPointCommand.Create(t: Tcoord_system; X,Y: Integer);
 begin
   inherited Create(nil);
   _t:=t;
@@ -92,6 +111,7 @@ begin
   _func:=func;
   _x:=X;
   _name:='Изменить '+name+' на '+FloatToStr(_x);
+  _execute_func:=Change_float;
 end;
 
 function TChangeFloatCommand.Execute: boolean;
@@ -108,6 +128,28 @@ function TChangeFloatCommand.caption: string;
 begin
   Result:=_name;
 end;
+
+procedure TChangeFloatCommand.DefineProperties(filer: TFiler);
+begin
+  inherited;
+  filer.DefineProperty('title',readTitle,writeTitle,(_name<>''));
+end;
+
+procedure TChangeFloatCommand.readTitle(reader: TReader);
+begin
+  _name:=reader.ReadString;
+end;
+
+procedure TChangeFloatCommand.writeTitle(writer: TWriter);
+begin
+  writer.WriteString(_name);
+end;
+
+function TChangeFloatCommand.change_float(var x: Real): Boolean;
+begin
+  result:=false;
+end;
+
 
 (*
               ChangeBool
@@ -144,7 +186,7 @@ end;
 (*
             ClearPoints
                                       *)
-constructor TClearPointsCommand.Create(adr: coord_system);
+constructor TClearPointsCommand.Create(adr: Tcoord_system);
 begin
   inherited Create(nil);
   _adr:=adr;
@@ -168,6 +210,32 @@ end;
 function TClearPointsCommand.Caption: string;
 begin
   result:='Удаление точек данных';
+end;
+
+
+(*
+        TButtonClickCommand
+                                  *)
+
+constructor TButtonClickCommand.Create(event: TNotifyEvent);
+begin
+  inherited Create(nil);
+  _onclick:=event;
+end;
+
+function TButtonClickCommand.Execute: boolean;
+begin
+  result:=true;
+end;
+
+function TButtonClickCommand.Caption: string;
+begin
+  result:='Кнопка нажата';
+end;
+
+procedure TButtonClickCommand.Foobar(sender: TObject);
+begin
+
 end;
 
 

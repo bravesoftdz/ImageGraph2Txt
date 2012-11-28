@@ -11,10 +11,12 @@ uses
   GraphicStrings in '..\GraphicEx\GraphicStrings.pas',
   JPG in '..\GraphicEx\JPG.pas',
   table_func_lib in 'table_func_lib.pas',
-  command_class_lib in 'command_class_lib.pas',
   ImageGraph2Txt_commands in 'ImageGraph2Txt_commands.pas',
-  streaming_class_lib in 'streaming_class_lib.pas',
-  StreamIO in 'StreamIO.pas';
+  StreamIO in 'StreamIO.pas',
+  simple_parser_lib in 'simple_parser_lib.pas',
+  command_class_lib in '..\lib\command_class_lib.pas',
+  streaming_class_lib in '..\lib\streaming_class_lib.pas',
+  imagegraph2txt_document_class in 'imagegraph2txt_document_class.pas';
 
 {$R *.res}
 

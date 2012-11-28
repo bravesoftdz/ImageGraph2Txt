@@ -1,9 +1,9 @@
 unit coord_system_lib;
 
 interface
-uses ExtCtrls,graphics,table_func_lib;
+uses ExtCtrls,graphics,table_func_lib,streaming_class_lib,classes;
 type
-    coord_system=class
+    Tcoord_system=class(TStreamingClass)
     private
       pix_x0,pix_y0,pix_xmax,pix_ymax :Integer;
       //координаты начала коорд и точек на осях соотв.
@@ -53,37 +53,38 @@ type
       function X_axis2pix(X: Real) :Integer;
       function Y_axis2pix(Y: Real) :Integer;
 
-      constructor Create;
+      constructor Create(owner: TComponent); override;
       destructor Destroy; override;
     end;
 
 
 implementation
-constructor coord_system.Create;
+constructor Tcoord_system.Create(owner: TComponent);
 begin
-  inherited Create;
+  inherited Create(owner);
   dat_xmax:=10;
   dat_ymax:=10;
   t:=table_func.Create;
   raw_data:=table_func.Create;
   line_color:=clBlack;
+  SetSubComponent(true);
 end;
 
-destructor coord_system.Destroy;
+destructor Tcoord_system.Destroy;
 begin
   t.Free;
   raw_data.Free;
   inherited Destroy;
 end;
 
-procedure coord_system.Clear;
+procedure Tcoord_system.Clear;
 begin
   zero_picked:=false;
   xmax_picked:=false;
   ymax_picked:=false;
   t.Clear;
 end;
-procedure coord_system.clearAxes;
+procedure Tcoord_system.clearAxes;
 begin
   zero_picked:=false;
   xmax_picked:=false;
@@ -91,17 +92,17 @@ begin
 end;
 
 
-function coord_system.get_nonzero: Boolean;
+function Tcoord_system.get_nonzero: Boolean;
 begin
   get_nonzero:=zero_picked or xmax_picked or ymax_picked;
 end;
 
-function coord_system.get_status: Boolean;
+function Tcoord_system.get_status: Boolean;
 begin
   get_status:=zero_picked and xmax_picked and ymax_picked;
 end;
 
-procedure coord_system.set_zero(X:Integer; Y:Integer);
+procedure Tcoord_system.set_zero(X:Integer; Y:Integer);
 begin
   pix_X0:=X;
   pix_Y0:=Y;
@@ -109,7 +110,7 @@ begin
   draw;
 end;
 
-function coord_system.set_axis(X:Integer; Y:Integer): Boolean;
+function Tcoord_system.set_axis(X:Integer; Y:Integer): Boolean;
 begin
   if zero_picked then begin
     if abs(X-pix_X0)>abs(Y-pix_Y0) then begin
@@ -124,7 +125,7 @@ begin
   set_axis:=status;
   draw;
 end;
-procedure coord_system.draw;
+procedure Tcoord_system.draw;
 begin
   image.Canvas.Pen.Width:=3;
   image.Canvas.Brush.Color:=clBlack;
@@ -145,7 +146,7 @@ begin
 
 end;
 
-function coord_system.X_axis2pix(X: Real) :Integer;
+function Tcoord_system.X_axis2pix(X: Real) :Integer;
 begin
   if log_XAxis then
     X_axis2pix:=pix_x0+Round((ln(X)-ln(dat_x0))*(pix_xmax-pix_x0)/(ln(dat_xmax)-ln(dat_x0)))
@@ -153,7 +154,7 @@ begin
     X_axis2pix:=pix_x0+Round((X-dat_x0)*(pix_xmax-pix_x0)/(dat_xmax-dat_x0));
 end;
 
-function coord_system.Y_axis2pix(Y: Real) :Integer;
+function Tcoord_system.Y_axis2pix(Y: Real) :Integer;
 begin
   if log_YAxis then
     Y_axis2pix:=pix_y0+Round((ln(Y)-ln(dat_y0))*(pix_ymax-pix_y0)/(ln(dat_ymax)-ln(dat_y0)))
@@ -161,7 +162,7 @@ begin
     Y_axis2pix:=pix_y0+Round((Y-dat_y0)*(pix_ymax-pix_y0)/(dat_ymax-dat_y0));
 end;
 
-function coord_system.X_pix2axis(X: Integer) :Real;
+function Tcoord_system.X_pix2axis(X: Integer) :Real;
 begin
   if log_XAxis then
     X_pix2axis:=dat_x0*exp((ln(dat_xmax)-ln(dat_x0))/(pix_xmax-pix_x0)*(X-pix_x0))
@@ -169,7 +170,7 @@ begin
     X_pix2axis:=dat_x0+(dat_xmax-dat_x0)/(pix_xmax-pix_x0)*(X-pix_x0);
 end;
 
-function coord_system.Y_pix2axis(Y: Integer) :Real;
+function Tcoord_system.Y_pix2axis(Y: Integer) :Real;
 begin
   if log_YAxis then
     Y_pix2axis:=dat_y0*exp((ln(dat_ymax)-ln(dat_y0))/(pix_ymax-pix_y0)*(Y-pix_y0))
@@ -177,7 +178,7 @@ begin
     Y_pix2axis:=dat_y0+(dat_ymax-dat_y0)/(pix_ymax-pix_y0)*(Y-pix_y0);
 end;
 
-function coord_system.AddPoint(X: Integer; Y:Integer): boolean;
+function Tcoord_system.AddPoint(X: Integer; Y:Integer): boolean;
 begin
   result:=raw_data.addpoint(X,Y);
   if result then begin
@@ -186,13 +187,13 @@ begin
   end;
 end;
 
-function coord_system.DeletePoint(X: Integer): Boolean;
+function Tcoord_system.DeletePoint(X: Integer): Boolean;
 begin
   result:=raw_data.deletepoint(X);
   if result then reprocess_output;
 end;
 
-function coord_system.change_x0(var x: Real): boolean;
+function Tcoord_system.change_x0(var x: Real): boolean;
 var tmp: Real;
 begin
   Result:=(dat_x0<>x);
@@ -204,7 +205,7 @@ begin
   end;
 end;
 
-function coord_system.change_y0(var y: Real): boolean;
+function Tcoord_system.change_y0(var y: Real): boolean;
 var tmp: Real;
 begin
   Result:=(dat_y0<>y);
@@ -216,7 +217,7 @@ begin
   end;
 end;
 
-function coord_system.change_xmax(var x: Real): boolean;
+function Tcoord_system.change_xmax(var x: Real): boolean;
 var tmp: Real;
 begin
   Result:=(dat_xmax<>x);
@@ -228,7 +229,7 @@ begin
   end;
 end;
 
-function coord_system.change_ymax(var y: Real): boolean;
+function Tcoord_system.change_ymax(var y: Real): boolean;
 var tmp: Real;
 begin
   Result:=(dat_ymax<>y);
@@ -240,7 +241,7 @@ begin
   end;
 end;
 
-procedure coord_system.reprocess_output;
+procedure Tcoord_system.reprocess_output;
 var i,L: Integer;
 begin
   t.Clear;
@@ -249,13 +250,13 @@ begin
   else for i:=0 to L do t.addpoint(X_pix2axis(Round(raw_data.X[i])),Y_pix2axis(Round(raw_data.Y[i])));
 end;
 
-procedure coord_system.invert_bool(var adr: boolean);
+procedure Tcoord_system.invert_bool(var adr: boolean);
 begin
   adr:=not adr;
   reprocess_output;
 end;
 
-procedure coord_system.ClearAllPoints;
+procedure Tcoord_system.ClearAllPoints;
 begin
   raw_data.Clear;
   t.Clear;

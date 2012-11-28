@@ -9,7 +9,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, table_func_lib, ExtCtrls, ExtDlgs, StdCtrls,coord_system_lib,
   TeEngine, Series, TeeProcs, Chart,Clipbrd, ComCtrls,math, Buttons,GraphicEx,command_class_lib,
-  imageGraph2Txt_Commands;
+  imageGraph2Txt_Commands, XPMan, ImgList, ToolWin, streaming_class_lib,imagegraph2txt_document_class;
 
 type
   TForm1 = class(TForm)
@@ -56,6 +56,7 @@ type
     Label4: TLabel;
     btnUndo: TButton;
     btnRedo: TButton;
+    Button3: TButton;
     procedure Button1Click(Sender: TObject);
     procedure CheckBox1Click(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -92,6 +93,7 @@ type
     procedure Memo1Change(Sender: TObject);
     procedure btnUndoClick(Sender: TObject);
     procedure btnRedoClick(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -110,14 +112,12 @@ var
   4 - отмечаем хар. точки на осях
   5 - построение самого графика
   *)
-  c: coord_system;
   pic: TPicture;
-  btmp: TBitmap; //текущее изображение
   mouse_down: boolean;
   start_P: TPoint;
   cur_P: TPoint;
 
-  undo_list: TCommandList;
+  data: TImageGraph2TxtDocument;
 implementation
 
 {$R *.dfm}
@@ -125,32 +125,28 @@ procedure refresh_undo_gui;
 var i: Integer;
 begin
   with Form1 do begin
-    btnUndo.Enabled:=undo_list.UndoEnabled;
-    btnRedo.Enabled:=undo_list.RedoEnabled;
+    btnUndo.Enabled:=data.UndoList.UndoEnabled;
+    btnRedo.Enabled:=data.UndoList.RedoEnabled;
     lstCommands.Clear;
-    for i:=0 to Length(undo_list.commands)-1 do begin
-      lstCommands.AddItem(undo_list.commands[i].caption,nil);
+    for i:=0 to data.UndoList.count-1 do begin
+      lstCommands.AddItem((data.UndoList.components[i] as TAbstractCommand).caption,nil);
     end;
-    lstCommands.ItemIndex:=undo_list.cur-1;
-    txtX0.Text:=FloatToStr(c.x0);
-    txtY0.Text:=FloatToStr(c.y0);
-    txtXmax.Text:=FloatToStr(c.xmax);
-    txtYmax.Text:=FloatToStr(c.ymax);
-    chkXLog.Checked:=c.log_Xaxis;
-    chkYLog.Checked:=c.log_Yaxis;
-    chkSwapXY.Checked:=c.swapXY;
+    lstCommands.ItemIndex:=data.UndoList.current-1;
+    txtX0.Text:=FloatToStr(data.coord.x0);
+    txtY0.Text:=FloatToStr(data.coord.y0);
+    txtXmax.Text:=FloatToStr(data.coord.xmax);
+    txtYmax.Text:=FloatToStr(data.coord.ymax);
+    chkXLog.Checked:=data.coord.log_Xaxis;
+    chkYLog.Checked:=data.coord.log_Yaxis;
+    chkSwapXY.Checked:=data.coord.swapXY;
   end;
 end;
 
 
 procedure dispatch_command(command: TAbstractCommand);
 begin
-  if command.Execute then begin
-    undo_list.Add(command);
-    refresh_undo_gui;
-  end
-  else
-    command.Free;
+  data.UndoList.DispatchCommand(command);
+  refresh_undo_gui;
 end;
 
 
@@ -172,7 +168,7 @@ end;
 procedure reset_picture;
 begin
   with form1 do begin
-    image1.Picture.Bitmap.Assign(btmp);
+    image1.Picture.Bitmap.Assign(data.btmp);
     image1.Proportional:=checkbox1.Checked;
     if image1.Proportional then begin
       image1.Height:=ScrollBox1.ClientHeight;
@@ -193,28 +189,28 @@ procedure repaint_graph;
 var i,xt,yt,xmin,xmax: Integer;
 begin
   reset_picture;
-  c.draw;
-  if (c.t.enabled) and (c.status) and (c.xmax<>c.x0) and (c.ymax<>c.y0) then begin
+  data.coord.draw;
+  if (data.coord.t.enabled) and (data.coord.status) and (data.coord.xmax<>data.coord.x0) and (data.coord.ymax<>data.coord.y0) then begin
       form1.Image1.Canvas.Pen.Width:=2;
-      form1.Image1.Canvas.Pen.Color:=c.line_color;
-    if c.swapXY then begin
-      yt:=round(c.Y_axis2pix(c.t.xmax));
-      xt:=round(c.X_axis2pix(c.t[c.t.xmax]));
+      form1.Image1.Canvas.Pen.Color:=data.coord.line_color;
+    if data.coord.swapXY then begin
+      yt:=round(data.coord.Y_axis2pix(data.coord.t.xmax));
+      xt:=round(data.coord.X_axis2pix(data.coord.t[data.coord.t.xmax]));
       form1.Image1.Canvas.MoveTo(xt,yt);
       xmin:=yt;
-      xmax:=round(c.Y_axis2pix(c.t.xmin));
+      xmax:=round(data.coord.Y_axis2pix(data.coord.t.xmin));
       for i:=xmin to xmax do begin
-        form1.Image1.Canvas.lineto(c.X_axis2pix(c.t[c.Y_pix2axis(i)]),i);
+        form1.Image1.Canvas.lineto(data.coord.X_axis2pix(data.coord.t[data.coord.Y_pix2axis(i)]),i);
       end;
     end
     else begin
-      xt:=round(c.X_axis2pix(c.t.xmin));
-      yt:=round(c.Y_axis2pix(c.t[c.t.xmin]));
+      xt:=round(data.coord.X_axis2pix(data.coord.t.xmin));
+      yt:=round(data.coord.Y_axis2pix(data.coord.t[data.coord.t.xmin]));
       form1.Image1.Canvas.MoveTo(xt,yt);
       xmin:=xt;
-      xmax:=round(c.X_axis2pix(c.t.xmax));
+      xmax:=round(data.coord.X_axis2pix(data.coord.t.xmax));
       for i:=xmin to xmax do begin
-        form1.Image1.Canvas.lineto(i,c.Y_axis2pix(c.t[c.X_pix2axis(i)]));
+        form1.Image1.Canvas.lineto(i,data.coord.Y_axis2pix(data.coord.t[data.coord.X_pix2axis(i)]));
       end;
     end;
   end;
@@ -225,20 +221,18 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 begin
   if openpicturedialog1.Execute then begin
-//    pic.LoadFromFile(openpicturedialog1.FileName);
-//    btmp.Canvas.Draw(0,0,pic.Graphic);
     image1.Picture.LoadFromFile(openpicturedialog1.FileName);
-    btmp.width:=0;
-    btmp.height:=0;
+    with data.Btmp do begin
+      width:=0;
+      height:=0;
 
-    btmp.height:=image1.Picture.Height;
-    btmp.Width:=image1.Picture.Width;
-    btmp.Canvas.Draw(0,0,image1.Picture.Graphic);
-//    btmp.Canvas.CopyRect(image1.ClientRect,image1.Canvas,image1.ClientRect);
-//    btmp.Assign(image1.Picture.Bitmap);
+      height:=image1.Picture.Height;
+      Width:=image1.Picture.Width;
+      Canvas.Draw(0,0,image1.Picture.Graphic);
+    end;
     reset_picture;
     state:=1;
-    c.Clear;
+    data.coord.Clear;
     lblPage1.Caption:='';
     lblPage2.Caption:='';
     StatusBar1.Panels[0].Text:='Вырезать прямоугольный участок';
@@ -268,16 +262,16 @@ begin
     cur_P:=start_P;
     mouse_down:=true;
     end;
-  3: begin c.set_zero(X,Y); state:=4; statusbar1.Panels[0].Text:='Отметьте точки на осях'; end;
+  3: begin data.coord.set_zero(X,Y); state:=4; statusbar1.Panels[0].Text:='Отметьте точки на осях'; end;
   4: begin
-   if c.set_axis(X,Y) then begin
+   if data.coord.set_axis(X,Y) then begin
     state:=5;
     statusbar1.Panels[0].Text:='Построение графика';
     SpeedButton1.Down:=true;
     end;
    end;
   5: begin
-    command:=TAddPointCommand.Create(c,X,Y);
+    command:=TAddPointCommand.Create(data.coord,X,Y);
     dispatch_command(command);
     repaint_graph;
    end;
@@ -288,22 +282,18 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
 state:=0;
-c:=coord_system.Create;
-c.image:=image1;
-btmp:=TBitmap.Create;
+
 pic:=TPicture.Create;
 
-undo_list:=TCommandList.Create(nil);
-//lstCommands.ItemIndex:=0;
+data:=TImageGraph2TxtDocument.Create(nil);
+data.coord.image:=image1;
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-c.Free;
-btmp.Free;
 pic.Free;
 
-undo_list.Free;
+data.Free;
 end;
 
 procedure TForm1.txtX0Change(Sender: TObject);
@@ -311,7 +301,7 @@ var x: Extended;
 var command: TAbstractCommand;
 begin
   if TryStrToFloat(txtx0.text,x) then begin
-    dispatch_command(TChangeFloatCommand.Create(c.change_x0,x,'X0'));
+    dispatch_command(TChangeFloatCommand.Create(data.coord.change_x0,x,'X0'));
     repaint_graph;
   end;
 end;
@@ -320,7 +310,7 @@ procedure TForm1.txtY0Change(Sender: TObject);
 var y: Extended;
 begin
   if TryStrToFloat(txty0.Text,y) then begin
-    dispatch_command(TChangeFloatCommand.Create(c.change_y0,y,'Y0'));
+    dispatch_command(TChangeFloatCommand.Create(data.coord.change_y0,y,'Y0'));
     repaint_graph;
   end;
 end;
@@ -329,7 +319,7 @@ procedure TForm1.txtXmaxChange(Sender: TObject);
 var x: Extended;
 begin
   if TryStrToFloat(txtXmax.Text,x) then begin
-    dispatch_command(TChangeFloatCommand.Create(c.change_xmax,x,'Xmax'));
+    dispatch_command(TChangeFloatCommand.Create(data.coord.change_xmax,x,'Xmax'));
     repaint_graph;
   end;
 end;
@@ -338,45 +328,48 @@ procedure TForm1.txtYmaxChange(Sender: TObject);
 var y: Extended;
 begin
   if TryStrToFloat(txtYmax.Text,y) then begin
-    dispatch_command(TChangeFloatCommand.Create(c.change_ymax,y,'Ymax'));
+    dispatch_command(TChangeFloatCommand.Create(data.coord.change_ymax,y,'Ymax'));
     repaint_graph;
   end;
 end;
 
 procedure TForm1.btnResetPointsClick(Sender: TObject);
 begin
-  dispatch_command(TClearPointsCommand.Create(c));
+
+  dispatch_command(TClearPointsCommand.Create(data.coord));
 //  c.ClearAllPoints;
-  c.t.title:=LabeledEdit1.Text;
-  c.t.Xname:=LabeledEdit2.Text;
-  c.t.Yname:=LabeledEdit3.Text;
-  c.t.description:=Memo1.Text;
+  with data.coord.t do begin
+    title:=LabeledEdit1.Text;
+    Xname:=LabeledEdit2.Text;
+    Yname:=LabeledEdit3.Text;
+    description:=Memo1.Text;
+  end;
   repaint_graph;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
   if SaveTxt.Execute then
-    c.t.SaveToFile(SaveTxt.FileName);
+    data.coord.t.SaveToFile(SaveTxt.FileName);
 end;
 
 procedure TForm1.chkYLogClick(Sender: TObject);
 begin
-  Dispatch_command(TChangeBoolCommand.Create(c.log_Yaxis,c.invert_bool,chkYLog.Checked,'Log y'));
+  Dispatch_command(TChangeBoolCommand.Create(data.coord.log_Yaxis,data.coord.invert_bool,chkYLog.Checked,'Log y'));
 //  c.log_Yaxis:=chkYLog.Checked;
   repaint_graph;
 end;
 
 procedure TForm1.chkXLogClick(Sender: TObject);
 begin
-  Dispatch_command(TChangeBoolCommand.Create(c.log_Xaxis,c.invert_bool,chkXLog.Checked,'Log X'));
+  Dispatch_command(TChangeBoolCommand.Create(data.coord.log_Xaxis,data.coord.invert_bool,chkXLog.Checked,'Log X'));
 //  c.log_Xaxis:=chkXLog.Checked;
   repaint_graph;
 end;
 
 procedure TForm1.chkSwapXYClick(Sender: TObject);
 begin
-  dispatch_command(TChangeBoolCommand.Create(c.swapXY,c.invert_bool,chkSwapXY.Checked,'SwapXY'));
+  dispatch_command(TChangeBoolCommand.Create(data.coord.swapXY,data.coord.invert_bool,chkSwapXY.Checked,'SwapXY'));
   repaint_graph;
 end;
 
@@ -396,9 +389,9 @@ end;
 
 procedure TForm1.btn_clipboardClick(Sender: TObject);
 begin
-  btmp.Assign(Clipboard);
+  data.btmp.Assign(Clipboard);
   reset_picture;
-  c.Clear;
+  data.coord.Clear;
   lblPage1.Caption:='';
   lblPage2.Caption:='';
   state:=1;
@@ -422,11 +415,11 @@ begin
         //без всяких заморочек с точностью
         //statusBar1.Panels[1].Text:=Format('Координаты (%g,%g)',[c.X_pix2axis(X),c.Y_pix2axis(Y)]);
         //посложнее: мы не хотим показывать лишних "хвостов"
-        ax:=c.X_pix2axis(X);
-        ay:=c.Y_pix2axis(Y);
-        dx:=log10(abs((c.X_pix2axis(X+1)-c.X_pix2axis(X-1))/2));
+        ax:=data.coord.X_pix2axis(X);
+        ay:=data.coord.Y_pix2axis(Y);
+        dx:=log10(abs((data.coord.X_pix2axis(X+1)-data.coord.X_pix2axis(X-1))/2));
         if dx>0 then dx:=0;
-        dy:=log10(abs((c.Y_pix2axis(Y+1)-c.Y_pix2axis(Y-1))/2));
+        dy:=log10(abs((data.coord.Y_pix2axis(Y+1)-data.coord.Y_pix2axis(Y-1))/2));
         if dy>0 then dy:=0;
         if ax=0 then precx:=1 else
           precx:=Ceil(log10(abs(ax))-dx);
@@ -482,11 +475,13 @@ kill_selection;
 
 src:=Rect(start_P,cur_P);
 dest:=Rect(0,0,cur_P.X-start_P.X,cur_P.Y-start_P.Y);
-btmp.Height:=cur_P.Y-start_P.Y;
-btmp.Width:=cur_P.X-start_P.X;
-btmp.Canvas.CopyRect(dest,image1.Canvas,src);
+with data.Btmp do begin
+  Height:=cur_P.Y-start_P.Y;
+  Width:=cur_P.X-start_P.X;
+  Canvas.CopyRect(dest,image1.Canvas,src);
+end;
 reset_picture;
-c.Clear;
+data.coord.Clear;
 lblPage1.Caption:='';
 lblPage2.Caption:='';
 end;
@@ -502,14 +497,14 @@ end;
 procedure TForm1.Button4Click(Sender: TObject);
 begin
   state:=3;
-  c.ClearAxes;
+  data.coord.ClearAxes;
   repaint_graph;
   Button4.Down:=true;
 end;
 
 procedure TForm1.ColorBox1Change(Sender: TObject);
 begin
-  c.line_color:=ColorBox1.Selected;
+  data.coord.line_color:=ColorBox1.Selected;
   repaint_graph;
 end;
 
@@ -517,14 +512,14 @@ procedure TForm1.TabSheet2Enter(Sender: TObject);
 begin
   repaint_graph;
   StatusBar1.Panels[0].Text:='';
-  if c.t.enabled then
+  if data.coord.t.enabled then
     lblPage2.Caption:='При редактировании в этой вкладке точки графика могут исказиться';
 
 end;
 
 procedure TForm1.TabSheet1Enter(Sender: TObject);
 begin
-  if c.nonzero then begin
+  if data.coord.nonzero then begin
     lblPage1.Caption:='При редактировании изображения в этой вкладке оси и точки обнулятся!';
     state:=1;
     reset_picture;
@@ -534,7 +529,7 @@ end;
 
 procedure TForm1.ComboBox1Change(Sender: TObject);
 begin
-  c.t.order:=StrToInt(ComboBox1.Text);
+  data.coord.t.order:=StrToInt(ComboBox1.Text);
   repaint_graph;
 end;
 
@@ -546,36 +541,46 @@ end;
 
 procedure TForm1.LabeledEdit1Change(Sender: TObject);
 begin
-  c.t.title:=LabeledEdit1.Text;
+  data.coord.t.title:=LabeledEdit1.Text;
 end;
 
 procedure TForm1.LabeledEdit2Change(Sender: TObject);
 begin
-  c.t.Xname:=LabeledEdit2.Text;
+  data.coord.t.Xname:=LabeledEdit2.Text;
 end;
 
 procedure TForm1.LabeledEdit3Change(Sender: TObject);
 begin
-  c.t.Yname:=LabeledEdit3.Text;
+  data.coord.t.Yname:=LabeledEdit3.Text;
 end;
 
 procedure TForm1.Memo1Change(Sender: TObject);
 begin
-  c.t.description:=Memo1.Text;
+  data.coord.t.description:=Memo1.Text;
 end;
 
 procedure TForm1.btnUndoClick(Sender: TObject);
 begin
-  undo_list.Undo;
+  data.UndoList.Undo;
   refresh_undo_gui;
   repaint_graph;
 end;
 
 procedure TForm1.btnRedoClick(Sender: TObject);
 begin
-  undo_list.Redo;
+  data.UndoList.Redo;
   refresh_undo_gui;
   repaint_graph;
+end;
+
+procedure TForm1.Button3Click(Sender: TObject);
+begin
+  if Savetxt.Execute then begin
+    Dispatch_Command(TButtonClickCommand.Create(btnCropClick));
+
+    data.UndoList.saveFormat:=fCyr;
+    data.UndoList.SaveToFile(savetxt.FileName);
+  end;
 end;
 
 end.
