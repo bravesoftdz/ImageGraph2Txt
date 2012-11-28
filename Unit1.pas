@@ -57,6 +57,8 @@ type
     btnUndo: TButton;
     btnRedo: TButton;
     Button3: TButton;
+    Button5: TButton;
+    OpenDialog1: TOpenDialog;
     procedure Button1Click(Sender: TObject);
     procedure CheckBox1Click(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -94,6 +96,7 @@ type
     procedure btnUndoClick(Sender: TObject);
     procedure btnRedoClick(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -142,11 +145,16 @@ begin
   end;
 end;
 
-
 procedure dispatch_command(command: TAbstractCommand);
 begin
-  data.UndoList.DispatchCommand(command);
-  refresh_undo_gui;
+  data.InsertComponent(command);
+  if command.Execute then begin
+    data.RemoveComponent(command);
+    data.UndoList.Add(command);
+    refresh_undo_gui;
+  end
+  else
+    command.Free;
 end;
 
 
@@ -190,7 +198,7 @@ var i,xt,yt,xmin,xmax: Integer;
 begin
   reset_picture;
   data.coord.draw;
-  if (data.coord.t.enabled) and (data.coord.status) and (data.coord.xmax<>data.coord.x0) and (data.coord.ymax<>data.coord.y0) then begin
+  if data.coord.enabled then begin
       form1.Image1.Canvas.Pen.Width:=2;
       form1.Image1.Canvas.Pen.Color:=data.coord.line_color;
     if data.coord.swapXY then begin
@@ -271,7 +279,7 @@ begin
     end;
    end;
   5: begin
-    command:=TAddPointCommand.Create(data.coord,X,Y);
+    command:=TAddPointCommand.Create(X,Y);
     dispatch_command(command);
     repaint_graph;
    end;
@@ -298,10 +306,9 @@ end;
 
 procedure TForm1.txtX0Change(Sender: TObject);
 var x: Extended;
-var command: TAbstractCommand;
 begin
   if TryStrToFloat(txtx0.text,x) then begin
-    dispatch_command(TChangeFloatCommand.Create(data.coord.change_x0,x,'X0'));
+      dispatch_command(TChangeFloatProperty.Create('coord.X0',x));
     repaint_graph;
   end;
 end;
@@ -310,7 +317,7 @@ procedure TForm1.txtY0Change(Sender: TObject);
 var y: Extended;
 begin
   if TryStrToFloat(txty0.Text,y) then begin
-    dispatch_command(TChangeFloatCommand.Create(data.coord.change_y0,y,'Y0'));
+    dispatch_command(TChangeFloatProperty.Create('coord.Y0',y));
     repaint_graph;
   end;
 end;
@@ -319,7 +326,7 @@ procedure TForm1.txtXmaxChange(Sender: TObject);
 var x: Extended;
 begin
   if TryStrToFloat(txtXmax.Text,x) then begin
-    dispatch_command(TChangeFloatCommand.Create(data.coord.change_xmax,x,'Xmax'));
+    dispatch_command(TChangeFloatProperty.Create('coord.Xmax',x));
     repaint_graph;
   end;
 end;
@@ -328,7 +335,7 @@ procedure TForm1.txtYmaxChange(Sender: TObject);
 var y: Extended;
 begin
   if TryStrToFloat(txtYmax.Text,y) then begin
-    dispatch_command(TChangeFloatCommand.Create(data.coord.change_ymax,y,'Ymax'));
+    dispatch_command(TChangeFloatProperty.Create('coord.Ymax',y));
     repaint_graph;
   end;
 end;
@@ -342,7 +349,7 @@ begin
     title:=LabeledEdit1.Text;
     Xname:=LabeledEdit2.Text;
     Yname:=LabeledEdit3.Text;
-    description:=Memo1.Text;
+    description:=Memo1.lines;
   end;
   repaint_graph;
 end;
@@ -350,26 +357,26 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 begin
   if SaveTxt.Execute then
-    data.coord.t.SaveToFile(SaveTxt.FileName);
+    data.coord.t.SaveToTextFile(SaveTxt.FileName);
 end;
 
 procedure TForm1.chkYLogClick(Sender: TObject);
 begin
-  Dispatch_command(TChangeBoolCommand.Create(data.coord.log_Yaxis,data.coord.invert_bool,chkYLog.Checked,'Log y'));
+  Dispatch_command(TChangeBoolCommand.Create(data.coord.flog_Yaxis,data.coord.invert_bool,chkYLog.Checked,'Log y'));
 //  c.log_Yaxis:=chkYLog.Checked;
   repaint_graph;
 end;
 
 procedure TForm1.chkXLogClick(Sender: TObject);
 begin
-  Dispatch_command(TChangeBoolCommand.Create(data.coord.log_Xaxis,data.coord.invert_bool,chkXLog.Checked,'Log X'));
+  Dispatch_command(TChangeBoolCommand.Create(data.coord.flog_Xaxis,data.coord.invert_bool,chkXLog.Checked,'Log X'));
 //  c.log_Xaxis:=chkXLog.Checked;
   repaint_graph;
 end;
 
 procedure TForm1.chkSwapXYClick(Sender: TObject);
 begin
-  dispatch_command(TChangeBoolCommand.Create(data.coord.swapXY,data.coord.invert_bool,chkSwapXY.Checked,'SwapXY'));
+  dispatch_command(TChangeFloatProperty.Create('coord.swapXY',0));
   repaint_graph;
 end;
 
@@ -556,7 +563,7 @@ end;
 
 procedure TForm1.Memo1Change(Sender: TObject);
 begin
-  data.coord.t.description:=Memo1.Text;
+  data.coord.t.description:=Memo1.Lines;
 end;
 
 procedure TForm1.btnUndoClick(Sender: TObject);
@@ -576,10 +583,21 @@ end;
 procedure TForm1.Button3Click(Sender: TObject);
 begin
   if Savetxt.Execute then begin
-    Dispatch_Command(TButtonClickCommand.Create(btnCropClick));
+    if Savetxt.FilterIndex=1 then data.saveFormat:=fCyr
+    else data.saveFormat:=fBinary;
+    data.SaveToFile(savetxt.FileName);
+  end;
+end;
 
-    data.UndoList.saveFormat:=fCyr;
-    data.UndoList.SaveToFile(savetxt.FileName);
+procedure TForm1.Button5Click(Sender: TObject);
+begin
+  if OpenDialog1.Execute then begin
+    data.Free;
+    data:=TImageGraph2TxtDocument.LoadFromFile(OpenDialog1.FileName);
+    data.coord.image:=image1;
+    data.coord.reprocess_output;
+    refresh_undo_gui;
+    repaint_graph;
   end;
 end;
 

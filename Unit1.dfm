@@ -1,8 +1,8 @@
 object Form1: TForm1
-  Left = 305
-  Top = 431
-  Width = 772
-  Height = 390
+  Left = 242
+  Top = 127
+  Width = 626
+  Height = 370
   Caption = 'graph2txt v. 0.04'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,25 +16,25 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnShow = FormShow
   DesignSize = (
-    764
-    356)
+    618
+    336)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
     Left = 0
     Top = 8
-    Width = 759
-    Height = 179
+    Width = 613
+    Height = 159
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     DesignSize = (
-      755
-      175)
+      609
+      155)
     object Image1: TImage
       Left = 0
       Top = 0
-      Width = 759
-      Height = 179
+      Width = 613
+      Height = 159
       Cursor = crCross
       Anchors = [akLeft, akTop, akRight, akBottom]
       OnMouseDown = Image1MouseDown
@@ -44,17 +44,17 @@ object Form1: TForm1
   end
   object PageControl1: TPageControl
     Left = 0
-    Top = 194
-    Width = 755
+    Top = 166
+    Width = 609
     Height = 137
-    ActivePage = TabSheet4
+    ActivePage = TabSheet2
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
     object TabSheet1: TTabSheet
       Caption = #1047#1072#1075#1088#1091#1079#1082#1072' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103
       OnEnter = TabSheet1Enter
       DesignSize = (
-        747
+        601
         109)
       object lblPage1: TLabel
         Left = 376
@@ -394,12 +394,21 @@ object Form1: TForm1
         TabOrder = 3
         OnClick = Button3Click
       end
+      object Button5: TButton
+        Left = 320
+        Top = 8
+        Width = 105
+        Height = 25
+        Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100
+        TabOrder = 4
+        OnClick = Button5Click
+      end
     end
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 330
-    Width = 764
+    Top = 310
+    Width = 618
     Height = 26
     Panels = <
       item
@@ -431,5 +440,11 @@ object Form1: TForm1
     Filter = 'BMP file|*.bmp|All files|*.*'
     Left = 348
     Top = 118
+  end
+  object OpenDialog1: TOpenDialog
+    DefaultExt = 'txt'
+    Filter = 'Text files|*.txt|All files|*.*'
+    Left = 384
+    Top = 120
   end
 end

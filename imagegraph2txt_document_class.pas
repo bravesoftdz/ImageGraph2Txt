@@ -15,8 +15,8 @@ public
   constructor Create(owner: TComponent=nil); override;
   destructor Destroy; override;
 published
-  property Btmp: TBitmap read fBtmp write setBtmp;
   property coord: TCoord_System read fCoord write fCoord;
+  property Btmp: TBitmap read fBtmp write setBtmp;
 end;
 
 implementation

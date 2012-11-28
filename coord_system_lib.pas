@@ -5,11 +5,12 @@ uses ExtCtrls,graphics,table_func_lib,streaming_class_lib,classes;
 type
     Tcoord_system=class(TStreamingClass)
     private
-      pix_x0,pix_y0,pix_xmax,pix_ymax :Integer;
+      fpix_x0,fpix_y0,fpix_xmax,fpix_ymax :Integer;
       //координаты начала коорд и точек на осях соотв.
       dat_x0,dat_y0,dat_xmax,dat_ymax :Real;
       //те же точки но в единицах указаных на осях
-      zero_picked,xmax_picked,ymax_picked: Boolean;
+      fzero_picked,fxmax_picked,fymax_picked: Boolean;
+      fRawData: table_func; //промежуточная, запоминающая коорд. в пикселях
       function get_nonzero: Boolean;
       function get_status: Boolean;
       //выбраны ли данные точки?
@@ -19,24 +20,20 @@ type
     public
       image: TImage;
       t: table_func;  //выходная, которая в файл пойдет
-      raw_data: table_func; //промежуточная, запоминающая коорд. в пикселях
-      log_Xaxis,log_Yaxis :boolean;
-      swapXY: boolean;
+      flog_Xaxis,flog_Yaxis :boolean;
+      fswapXY: boolean;
 
       line_color: TColor;
       procedure reprocess_output;
       procedure set_zero(X: Integer; Y:Integer);
       function set_axis(X: Integer; Y:Integer): Boolean;
 
-      function change_x0(var x: Real): boolean;
-      function change_y0(var y: Real): boolean;
-      function change_xmax(var x: Real): boolean;
-      function change_ymax(var y: Real): boolean;
+      procedure change_x0(x: Real);
+      procedure change_y0(y: Real);
+      procedure change_xmax(x: Real);
+      procedure change_ymax(y: Real);
 
-      property x0: Real read dat_x0;
-      property y0: Real read dat_y0;
-      property xmax: Real read dat_xmax;
-      property ymax: Real read dat_ymax;
+      function enabled: Boolean;
 
       procedure invert_bool(var adr: boolean);
 
@@ -54,7 +51,28 @@ type
       function Y_axis2pix(Y: Real) :Integer;
 
       constructor Create(owner: TComponent); override;
+      procedure AfterConstruction; override;
       destructor Destroy; override;
+    published
+      property x0: Real read dat_x0 write change_x0;
+      property y0: Real read dat_y0 write change_y0;
+      property xmax: Real read dat_xmax write change_xmax;
+      property ymax: Real read dat_ymax write change_ymax;
+
+      property pix_x0: Integer read fpix_x0 write fpix_x0;
+      property pix_y0: Integer read fpix_y0 write fpix_y0;
+      property pix_xmax: Integer read fpix_xmax write fpix_xmax;
+      property pix_ymax: Integer read fpix_ymax write fpix_ymax;
+
+      property zero_picked: Boolean read fzero_picked write fzero_picked;
+      property xmax_picked: Boolean read fxmax_picked write fxmax_picked;
+      property ymax_picked: Boolean read fymax_picked write fymax_picked;
+
+      property log_xaxis: boolean read flog_Xaxis write flog_Xaxis;
+      property log_Yaxis: boolean read flog_Yaxis write flog_Yaxis;
+      property swapXY: boolean read fswapXY write fswapXY;
+
+      property raw_data: table_func read fRawData write fRawData;
     end;
 
 
@@ -70,6 +88,11 @@ begin
   SetSubComponent(true);
 end;
 
+procedure TCoord_system.AfterConstruction;
+begin
+  if enabled then reprocess_output;
+end;
+
 destructor Tcoord_system.Destroy;
 begin
   t.Free;
@@ -79,9 +102,7 @@ end;
 
 procedure Tcoord_system.Clear;
 begin
-  zero_picked:=false;
-  xmax_picked:=false;
-  ymax_picked:=false;
+  clearAxes;
   t.Clear;
 end;
 procedure Tcoord_system.clearAxes;
@@ -102,6 +123,11 @@ begin
   get_status:=zero_picked and xmax_picked and ymax_picked;
 end;
 
+function TCoord_system.enabled: Boolean;
+begin
+  Result:=get_status and (dat_xmax<>dat_x0) and (dat_ymax<>dat_y0) and raw_data.enabled;
+end;
+
 procedure Tcoord_system.set_zero(X:Integer; Y:Integer);
 begin
   pix_X0:=X;
@@ -118,6 +144,7 @@ begin
       xmax_picked:=true;
       end
     else begin
+      if Y=pix_Y0 then exit;
      pix_Ymax:=Y;
      ymax_picked:=true;
     end;
@@ -193,61 +220,40 @@ begin
   if result then reprocess_output;
 end;
 
-function Tcoord_system.change_x0(var x: Real): boolean;
-var tmp: Real;
+procedure Tcoord_system.change_x0(x: Real);
 begin
-  Result:=(dat_x0<>x);
-  if Result then begin
-    tmp:=dat_x0;
-    dat_x0:=x;
-    x:=tmp;
-    reprocess_output;
-  end;
+  dat_x0:=x;
+  reprocess_output;
 end;
 
-function Tcoord_system.change_y0(var y: Real): boolean;
-var tmp: Real;
+procedure Tcoord_system.change_y0(y: Real);
 begin
-  Result:=(dat_y0<>y);
-  if Result then begin
-    tmp:=dat_y0;
-    dat_y0:=y;
-    y:=tmp;
-    reprocess_output;
-  end;
+  dat_y0:=y;
+  reprocess_output;
 end;
 
-function Tcoord_system.change_xmax(var x: Real): boolean;
-var tmp: Real;
+procedure Tcoord_system.change_xmax(x: Real);
 begin
-  Result:=(dat_xmax<>x);
-  if Result then begin
-    tmp:=dat_xmax;
-    dat_xmax:=x;
-    x:=tmp;
-    reprocess_output;
-  end;
+  dat_xmax:=x;
+  reprocess_output;
 end;
 
-function Tcoord_system.change_ymax(var y: Real): boolean;
-var tmp: Real;
+procedure Tcoord_system.change_ymax(y: Real);
 begin
-  Result:=(dat_ymax<>y);
-  if Result then begin
-    tmp:=dat_ymax;
-    dat_ymax:=y;
-    y:=tmp;
-    reprocess_output;
-  end;
+  dat_ymax:=y;
+  reprocess_output;
 end;
 
 procedure Tcoord_system.reprocess_output;
 var i,L: Integer;
 begin
-  t.Clear;
-  L:=raw_data.count-1;
-  if swapXY then for i:=0 to L do t.addpoint(Y_pix2axis(Round(raw_data.Y[i])),X_pix2axis(Round(raw_data.X[i])))
-  else for i:=0 to L do t.addpoint(X_pix2axis(Round(raw_data.X[i])),Y_pix2axis(Round(raw_data.Y[i])));
+//  if not (csLoading in self.ComponentState) and enabled then begin
+  if enabled then begin
+    t.Clear;
+    L:=raw_data.count-1;
+    if swapXY then for i:=0 to L do t.addpoint(Y_pix2axis(Round(raw_data.Y[i])),X_pix2axis(Round(raw_data.X[i])))
+    else for i:=0 to L do t.addpoint(X_pix2axis(Round(raw_data.X[i])),Y_pix2axis(Round(raw_data.Y[i])));
+  end;
 end;
 
 procedure Tcoord_system.invert_bool(var adr: boolean);
