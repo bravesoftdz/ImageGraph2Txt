@@ -118,10 +118,7 @@ type
     procedure btnSaveBmpClick(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure ColorBox1Change(Sender: TObject);
-    procedure TabSheet2Enter(Sender: TObject);
-    procedure TabSheet1Enter(Sender: TObject);
     procedure ComboBox1Change(Sender: TObject);
-    procedure TabSheet3Enter(Sender: TObject);
     procedure LabeledEdit1Change(Sender: TObject);
     procedure LabeledEdit2Change(Sender: TObject);
     procedure LabeledEdit3Change(Sender: TObject);
@@ -300,8 +297,8 @@ begin
     data.tool:=TAddPointTool.Create(data,form1.menuAddPointsTool.Name);
     form1.menuAddPointsTool.Click;
   end;
-  data.tool.Select;
   form1.gui_refresh(data);
+  data.tool.Select;
 end;
 
 procedure Load_project(FileName: string);
@@ -499,23 +496,8 @@ var
   tmp: integer;
 begin
 (*
-  mouse_down:=false;
+
   if state=1 then
-    if (abs(start_P.X-cur_P.X)>10) and (abs(start_P.Y-cur_P.Y)>10) then begin
-      state:=2;
-      menuCrop.Enabled:=true;
-      btnCrop.Enabled:=true;
-      if (Start_P.X>cur_P.X) then begin
-        tmp:=start_P.X;
-        start_P.X:=cur_P.X;
-        cur_P.X:=tmp;
-      end;
-      if (Start_P.Y>cur_P.Y) then begin
-        tmp:=start_P.Y;
-        start_P.Y:=cur_P.Y;
-        cur_P.Y:=tmp;
-      end;
-    end
     else
       kill_selection;
 *)
@@ -549,39 +531,10 @@ begin
   repaint_graph;
 end;
 
-procedure TForm1.TabSheet2Enter(Sender: TObject);
-begin
-  repaint_graph;
-  StatusBar1.Panels[0].Text:='';
-  if data.coord.t.enabled then
-    lblPage2.Caption:='При редактировании в этой вкладке точки графика могут исказиться';
-
-end;
-
-procedure TForm1.TabSheet1Enter(Sender: TObject);
-begin
-(*
-  if data.coord.nonzero then begin
-    lblPage1.Caption:='При редактировании изображения в этой вкладке оси и точки обнулятся!';
-    state:=1;
-    reset_picture;
-  end;
-  StatusBar1.Panels[0].Text:='Вырезать прямоугольный участок';
-  *)
-end;
-
 procedure TForm1.ComboBox1Change(Sender: TObject);
 begin
   data.coord.t.order:=StrToInt(ComboBox1.Text);
   repaint_graph;
-end;
-
-procedure TForm1.TabSheet3Enter(Sender: TObject);
-begin
-(*
-  state:=5;
-  repaint_graph;
-  *)
 end;
 
 procedure TForm1.LabeledEdit1Change(Sender: TObject);

@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 416
-  Top = 26
+  Left = 402
+  Top = 291
   Width = 626
   Height = 370
   Caption = 'graph2txt v. 0.1'
@@ -21,8 +21,8 @@ object Form1: TForm1
   OnMouseWheelUp = FormMouseWheelUp
   OnShow = FormShow
   DesignSize = (
-    610
-    314)
+    618
+    316)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
@@ -58,7 +58,6 @@ object Form1: TForm1
     TabOrder = 1
     object TabSheet1: TTabSheet
       Caption = #1047#1072#1075#1088#1091#1079#1082#1072' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103
-      OnEnter = TabSheet1Enter
       object lblPage1: TLabel
         Left = 376
         Top = 8
@@ -106,7 +105,6 @@ object Form1: TForm1
     object TabSheet2: TTabSheet
       Caption = #1042#1099#1073#1086#1088' '#1082#1086#1086#1088#1076#1080#1085#1072#1090
       ImageIndex = 1
-      OnEnter = TabSheet2Enter
       object lblPage2: TLabel
         Left = 392
         Top = 8
@@ -230,7 +228,6 @@ object Form1: TForm1
     object TabSheet3: TTabSheet
       Caption = #1058#1088#1072#1089#1089#1080#1088#1086#1074#1082#1072' '#1075#1088#1072#1092#1080#1082#1072
       ImageIndex = 2
-      OnEnter = TabSheet3Enter
       object Label2: TLabel
         Left = 0
         Top = 8
@@ -398,8 +395,8 @@ object Form1: TForm1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 288
-    Width = 610
+    Top = 290
+    Width = 618
     Height = 26
     Panels = <
       item
@@ -413,7 +410,7 @@ object Form1: TForm1
   object ToolBar1: TToolBar
     Left = 0
     Top = 0
-    Width = 610
+    Width = 618
     Height = 57
     ButtonHeight = 42
     ButtonWidth = 43
