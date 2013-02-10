@@ -11,11 +11,20 @@ type
       //те же точки но в единицах указаных на осях
       fzero_picked,fxmax_picked,fymax_picked: Boolean;
       fRawData: table_func; //промежуточная, запоминающая коорд. в пикселях
+      fLineColor: TColor;
       function get_nonzero: Boolean;
       function get_status: Boolean;
       //выбраны ли данные точки?
 
+      procedure change_x0(x: Real);
+      procedure change_y0(y: Real);
+      procedure change_xmax(x: Real);
+      procedure change_ymax(y: Real);
 
+      procedure change_pix_x0(x: Integer);
+      procedure change_pix_y0(y: Integer);
+      procedure change_pix_xmax(x: Integer);
+      procedure change_pix_ymax(y: Integer);
 
     public
       image: TImage;
@@ -23,25 +32,20 @@ type
       flog_Xaxis,flog_Yaxis :boolean;
       fswapXY: boolean;
 
-      line_color: TColor;
+
       procedure reprocess_output;
-      procedure set_zero(X: Integer; Y:Integer);
       function set_axis(X: Integer; Y:Integer): Boolean;
 
-      procedure change_x0(x: Real);
-      procedure change_y0(y: Real);
-      procedure change_xmax(x: Real);
-      procedure change_ymax(y: Real);
-
-      function enabled: Boolean;
+      function coords_enabled: Boolean;
+      function data_enabled: Boolean;
 
       procedure invert_bool(var adr: boolean);
 
       property nonzero: Boolean read get_nonzero;
       property status: Boolean read get_status;
       procedure draw;
-      function AddPoint(X: Integer; Y:Integer): boolean;
-      function DeletePoint(X: Integer): boolean;
+      function AddPoint(X,Y: Real): boolean;
+      function DeletePoint(X: Real): boolean;
       procedure Clear;
       procedure ClearAxes;
       procedure ClearAllPoints;
@@ -59,10 +63,10 @@ type
       property xmax: Real read dat_xmax write change_xmax;
       property ymax: Real read dat_ymax write change_ymax;
 
-      property pix_x0: Integer read fpix_x0 write fpix_x0;
-      property pix_y0: Integer read fpix_y0 write fpix_y0;
-      property pix_xmax: Integer read fpix_xmax write fpix_xmax;
-      property pix_ymax: Integer read fpix_ymax write fpix_ymax;
+      property pix_x0: Integer read fpix_x0 write change_pix_x0;
+      property pix_y0: Integer read fpix_y0 write change_pix_y0;
+      property pix_xmax: Integer read fpix_xmax write change_pix_xmax;
+      property pix_ymax: Integer read fpix_ymax write change_pix_ymax;
 
       property zero_picked: Boolean read fzero_picked write fzero_picked;
       property xmax_picked: Boolean read fxmax_picked write fxmax_picked;
@@ -72,11 +76,16 @@ type
       property log_Yaxis: boolean read flog_Yaxis write flog_Yaxis;
       property swapXY: boolean read fswapXY write fswapXY;
 
+      property LineColor: TColor read fLineColor write fLineColor default clBlack;
+
       property raw_data: table_func read fRawData write fRawData;
     end;
 
 
 implementation
+
+uses imagegraph2txt_data;
+
 constructor Tcoord_system.Create(owner: TComponent);
 begin
   inherited Create(owner);
@@ -84,13 +93,13 @@ begin
   dat_ymax:=10;
   t:=table_func.Create;
   raw_data:=table_func.Create;
-  line_color:=clBlack;
+  LineColor:=clBlack;
   SetSubComponent(true);
 end;
 
 procedure TCoord_system.AfterConstruction;
 begin
-  if enabled then reprocess_output;
+  if data_enabled then reprocess_output;
 end;
 
 destructor Tcoord_system.Destroy;
@@ -123,17 +132,14 @@ begin
   get_status:=zero_picked and xmax_picked and ymax_picked;
 end;
 
-function TCoord_system.enabled: Boolean;
+function TCoord_system.coords_enabled: Boolean;
 begin
-  Result:=get_status and (dat_xmax<>dat_x0) and (dat_ymax<>dat_y0) and raw_data.enabled;
+  Result:=get_status and (dat_xmax<>dat_x0) and (dat_ymax<>dat_y0);
 end;
 
-procedure Tcoord_system.set_zero(X:Integer; Y:Integer);
+function TCoord_system.data_enabled: Boolean;
 begin
-  pix_X0:=X;
-  pix_Y0:=Y;
-  zero_picked:=true;
-  draw;
+  Result:=coords_enabled and raw_data.enabled;
 end;
 
 function Tcoord_system.set_axis(X:Integer; Y:Integer): Boolean;
@@ -144,7 +150,10 @@ begin
       xmax_picked:=true;
       end
     else begin
-      if Y=pix_Y0 then exit;
+      if Y=pix_Y0 then begin
+        set_axis:=false;
+        exit;
+      end;
      pix_Ymax:=Y;
      ymax_picked:=true;
     end;
@@ -153,22 +162,31 @@ begin
   draw;
 end;
 procedure Tcoord_system.draw;
+var scale: Real;
+  x0_scaled,y0_scaled,xmax_scaled,ymax_scaled: Integer;
 begin
+  scale:=(Owner as TImageGraph2TxtDocument).scale;
+  x0_scaled:=Round(pix_x0*scale);
+  y0_scaled:=Round(pix_y0*scale);
+  xmax_scaled:=Round(pix_xmax*scale);
+  ymax_scaled:=Round(pix_ymax*scale);
   image.Canvas.Pen.Width:=3;
   image.Canvas.Brush.Color:=clBlack;
   image.Canvas.Pen.Color:=clBlack;
   image.Canvas.Pen.Style:=psSolid;
   image.Canvas.Pen.Mode:=pmCopy;
-  if zero_picked then image.Canvas.Ellipse(pix_x0-4,pix_Y0-4,pix_X0+4,pix_Y0+4);
-  if xmax_picked then begin
-    image.Canvas.MoveTo(pix_x0,pix_y0);
-    image.Canvas.LineTo(pix_Xmax,pix_y0);
-    image.Canvas.Ellipse(pix_xmax-4,pix_y0-4,pix_xmax+4,pix_y0+4);
-  end;
-  if ymax_picked then begin
-    image.Canvas.MoveTo(pix_x0,pix_y0);
-    image.Canvas.LineTo(pix_x0,pix_Ymax);
-    image.Canvas.Ellipse(pix_x0-4,pix_ymax-4,pix_x0+4,pix_ymax+4);
+  if zero_picked then begin
+    image.Canvas.Ellipse(x0_scaled-4,Y0_scaled-4,X0_scaled+4,Y0_scaled+4);
+    if xmax_picked then begin
+      image.Canvas.MoveTo(x0_scaled,y0_scaled);
+      image.Canvas.LineTo(Xmax_scaled,y0_scaled);
+      image.Canvas.Ellipse(xmax_scaled-4,y0_scaled-4,xmax_scaled+4,y0_scaled+4);
+    end;
+    if ymax_picked then begin
+      image.Canvas.MoveTo(x0_scaled,y0_scaled);
+      image.Canvas.LineTo(x0_scaled,Ymax_scaled);
+      image.Canvas.Ellipse(x0_scaled-4,ymax_scaled-4,x0_scaled+4,ymax_scaled+4);
+    end;
   end;
 
 end;
@@ -205,16 +223,19 @@ begin
     Y_pix2axis:=dat_y0+(dat_ymax-dat_y0)/(pix_ymax-pix_y0)*(Y-pix_y0);
 end;
 
-function Tcoord_system.AddPoint(X: Integer; Y:Integer): boolean;
+function Tcoord_system.AddPoint(X,Y: Real): boolean;
 begin
   result:=raw_data.addpoint(X,Y);
+  if result then reprocess_output;
+(*
   if result then begin
     if swapXY then t.addpoint(Y_pix2axis(Y),X_pix2axis(X))
     else t.addpoint(X_pix2axis(X),Y_pix2axis(Y));
   end;
+*)
 end;
 
-function Tcoord_system.DeletePoint(X: Integer): Boolean;
+function Tcoord_system.DeletePoint(X: Real): Boolean;
 begin
   result:=raw_data.deletepoint(X);
   if result then reprocess_output;
@@ -244,11 +265,36 @@ begin
   reprocess_output;
 end;
 
+procedure Tcoord_system.change_pix_x0(x: Integer);
+begin
+  fpix_x0:=x;
+  reprocess_output;
+end;
+
+procedure Tcoord_system.change_pix_y0(y: Integer);
+begin
+  fpix_y0:=y;
+  reprocess_output;
+end;
+
+procedure Tcoord_system.change_pix_xmax(x: Integer);
+begin
+  fpix_xmax:=x;
+  reprocess_output;
+end;
+
+procedure Tcoord_system.change_pix_ymax(y: Integer);
+begin
+  fpix_ymax:=y;
+  reprocess_output;
+end;
+
 procedure Tcoord_system.reprocess_output;
 var i,L: Integer;
 begin
 //  if not (csLoading in self.ComponentState) and enabled then begin
-  if enabled then begin
+  if not raw_data.enabled then t.Clear;
+  if data_enabled then begin
     t.Clear;
     L:=raw_data.count-1;
     if swapXY then for i:=0 to L do t.addpoint(Y_pix2axis(Round(raw_data.Y[i])),X_pix2axis(Round(raw_data.X[i])))
@@ -264,8 +310,8 @@ end;
 
 procedure Tcoord_system.ClearAllPoints;
 begin
-  raw_data.Clear;
-  t.Clear;
+  raw_data.ClearPoints;
+  t.ClearPoints;
 end;
 
 end.
