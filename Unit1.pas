@@ -16,10 +16,6 @@ type
     ScrollBox1: TScrollBox;
     Image1: TImage;
     PageControl1: TPageControl;
-    TabSheet1: TTabSheet;
-    btnLoadImage: TButton;
-    btn_clipboard: TButton;
-    btnCrop: TButton;
     TabSheet2: TTabSheet;
     txtX0: TLabeledEdit;
     txtY0: TLabeledEdit;
@@ -37,24 +33,14 @@ type
     btnResetPoints: TButton;
     ComboBox1: TComboBox;
     Label1: TLabel;
-    lblPage1: TLabel;
     lblPage2: TLabel;
     SaveTxt: TSaveDialog;
-    Button4: TSpeedButton;
-    SpeedButton1: TSpeedButton;
     SaveDialog1: TSaveDialog;
     LabeledEdit1: TLabeledEdit;
     LabeledEdit2: TLabeledEdit;
     LabeledEdit3: TLabeledEdit;
     Memo1: TMemo;
     Label3: TLabel;
-    TabSheet4: TTabSheet;
-    lstCommands: TListBox;
-    Label4: TLabel;
-    btnUndo: TButton;
-    btnRedo: TButton;
-    Button3: TButton;
-    Button5: TButton;
     OpenDialog1: TOpenDialog;
     MainMenu1: TMainMenu;
     N1: TMenuItem;
@@ -71,8 +57,6 @@ type
     menuRedo: TMenuItem;
     MenuPreferences: TMenuItem;
     N20: TMenuItem;
-    menuCrop: TMenuItem;
-    menuMarkAxes: TMenuItem;
     menuClearDataPoints: TMenuItem;
     menuSaveDataPoints: TMenuItem;
     N14: TMenuItem;
@@ -83,7 +67,7 @@ type
     ToolBar1: TToolBar;
     ImageList1: TImageList;
     btnNew: TToolButton;
-    ToolButton2: TToolButton;
+    btnOpenProject: TToolButton;
     btnSaveProject: TToolButton;
     btnSaveProjectAs: TToolButton;
     ToolButton3: TToolButton;
@@ -94,6 +78,15 @@ type
     menuAddAxesTool: TMenuItem;
     menuAddPointsTool: TMenuItem;
     btnCropTool: TToolButton;
+    ToolButton1: TToolButton;
+    btnZoomIn: TToolButton;
+    btnZoomOut: TToolButton;
+    btnPaste: TToolButton;
+    btnUndo: TToolButton;
+    btnRedo: TToolButton;
+    ToolButton2: TToolButton;
+    menuUndoList: TPopupMenu;
+    menuRedoList: TPopupMenu;
     procedure btnLoadImageClick(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -116,7 +109,6 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure btnCropClick(Sender: TObject);
     procedure btnSaveBmpClick(Sender: TObject);
-    procedure Button4Click(Sender: TObject);
     procedure ColorBox1Change(Sender: TObject);
     procedure ComboBox1Change(Sender: TObject);
     procedure LabeledEdit1Change(Sender: TObject);
@@ -145,13 +137,12 @@ type
     procedure menuPasteClick(Sender: TObject);
     procedure menuCropClick(Sender: TObject);
     procedure menuSaveImageAsClick(Sender: TObject);
-    procedure menuMarkAxesClick(Sender: TObject);
     procedure menuClearDataPointsClick(Sender: TObject);
     procedure menuSaveDataPointsClick(Sender: TObject);
     procedure btnUndoClick(Sender: TObject);
     procedure btnNewClick(Sender: TObject);
     procedure btnSaveProjectClick(Sender: TObject);
-    procedure ToolButton2Click(Sender: TObject);
+    procedure btnOpenProjectClick(Sender: TObject);
     procedure btnSaveProjectAsClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnAddPointsToolClick(Sender: TObject);
@@ -161,6 +152,13 @@ type
     procedure menuAddPointsToolClick(Sender: TObject);
     procedure btnCropToolClick(Sender: TObject);
     procedure btnAddAxesToolClick(Sender: TObject);
+    procedure btnPasteClick(Sender: TObject);
+    procedure btnZoomInClick(Sender: TObject);
+    procedure btnZoomOutClick(Sender: TObject);
+    procedure menuUndoListPopup(Sender: TObject);
+    procedure ProcessUndoMenu(Sender: TObject);
+    procedure menuRedoListPopup(Sender: TObject);
+    procedure ProcessRedoMenu(Sender: TObject);
   private
     { Private declarations }
   public
@@ -200,11 +198,6 @@ begin
     btnUndo.Enabled:=menuUndo.Enabled;
     btnRedo.Enabled:=menuRedo.Enabled;
 
-    lstCommands.Clear;
-    for i:=0 to data.UndoList.count-1 do begin
-      lstCommands.AddItem((data.UndoList.components[i] as TAbstractCommand).caption,nil);
-    end;
-    lstCommands.ItemIndex:=data.UndoList.current-1;
     txtX0.Text:=FloatToStr(data.coord.x0);
     txtY0.Text:=FloatToStr(data.coord.y0);
     txtXmax.Text:=FloatToStr(data.coord.xmax);
@@ -436,7 +429,7 @@ end;
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
   menuPaste.Enabled:=Clipboard.HasFormat(CF_BITMAP);
-  btn_clipboard.Enabled:=menuPaste.Enabled;
+  btnPaste.Enabled:=menuPaste.Enabled;
 end;
 
 procedure TForm1.btn_clipboardClick(Sender: TObject);
@@ -513,16 +506,6 @@ end;
 procedure TForm1.btnSaveBmpClick(Sender: TObject);
 begin
   menuSaveImageAsClick(nil);
-end;
-
-procedure TForm1.Button4Click(Sender: TObject);
-begin
-(*
-  state:=3;
-  data.coord.ClearAxes;
-  repaint_graph;
-  Button4.Down:=true;
-  *)
 end;
 
 procedure TForm1.ColorBox1Change(Sender: TObject);
@@ -750,11 +733,6 @@ begin
   end;
 end;
 
-procedure TForm1.menuMarkAxesClick(Sender: TObject);
-begin
-  Button4Click(nil);
-end;
-
 procedure TForm1.menuClearDataPointsClick(Sender: TObject);
 begin
   data.DispatchCommand(TClearPointsCommand.Create);
@@ -776,7 +754,7 @@ begin
   menuSaveProjectClick(Sender);
 end;
 
-procedure TForm1.ToolButton2Click(Sender: TObject);
+procedure TForm1.btnOpenProjectClick(Sender: TObject);
 begin
   menuOpenProjectClick(Sender);
 end;
@@ -850,6 +828,70 @@ end;
 procedure TForm1.btnAddAxesToolClick(Sender: TObject);
 begin
   menuAddAxesTool.Click;
+end;
+
+procedure TForm1.btnPasteClick(Sender: TObject);
+begin
+  menuPaste.Click;
+end;
+
+procedure TForm1.btnZoomInClick(Sender: TObject);
+begin
+  menuZoomPlus.Click;
+end;
+
+procedure TForm1.btnZoomOutClick(Sender: TObject);
+begin
+  menuZoomMinus.Click;
+end;
+
+
+procedure TForm1.ProcessUndoMenu(Sender: TObject);
+var i,j: Integer;
+begin
+  j:=(Sender as TMenuItem).Tag;//номер выбранной команды в списке undo
+  for i:=data.UndoList.current-1 downto j do data.Undo;
+end;
+
+procedure TForm1.ProcessRedoMenu(Sender: TObject);
+var i,j: Integer;
+begin
+  j:=(Sender as TMenuItem).Tag; //номер выбранной команды в списке undo
+  for i:=data.UndoList.current to j do data.Redo;
+end;
+
+procedure TForm1.menuUndoListPopup(Sender: TObject);
+var item: TMenuItem;
+    i,j: Integer;
+begin
+  menuUndoList.Items.Clear;
+  j:=0;
+  for i:=data.UndoList.current-1 downto 0 do begin
+    item:=TMenuItem.Create(nil);
+    item.Caption:=(data.UndoList.components[i] as TAbstractCommand).caption;
+    item.Tag:=i;
+    item.OnClick:=ProcessUndoMenu;
+
+    menuUndoList.Items.Insert(j,item);
+    inc(j);
+  end;
+end;
+
+procedure TForm1.menuRedoListPopup(Sender: TObject);
+var item: TMenuItem;
+    i,j: Integer;
+begin
+  menuRedoList.Items.Clear;
+  j:=0;
+  for i:=data.UndoList.current to data.UndoList.count-1 do begin
+    item:=TMenuItem.Create(nil);
+    item.Caption:=(data.UndoList.components[i] as TAbstractCommand).caption;
+    item.Tag:=i;
+    item.OnClick:=ProcessRedoMenu;
+
+    menuRedoList.Items.Insert(j,item);
+    inc(j);
+  end;
 end;
 
 end.

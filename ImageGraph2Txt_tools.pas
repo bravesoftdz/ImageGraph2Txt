@@ -53,6 +53,7 @@ private
   fstartx,fstarty,fcurx,fcury: Integer; //4 координаты
   fstate: TCropToolState;
   procedure Kill_selection;
+  procedure reset_selection;
   procedure set_state(astate: TCropToolState);
   property state: TCropToolState read fstate write set_state;
 public
@@ -194,13 +195,23 @@ begin
   end;
 end;
 
+procedure TCropTool.reset_selection;
+begin
+    SetStatusPanel('Выделите прямоугольную область');
+    startx:=0;
+    starty:=0;
+    curx:=0;
+    cury:=0;
+    selected:=false;
+end;
+
 procedure TCropTool.Select;
 begin
   if selected then begin
     kill_selection;
   end
   else begin
-    SetStatusPanel('Выделите прямоугольную область');
+    reset_selection;
   end;
 end;
 
@@ -208,16 +219,32 @@ procedure TCropTool.Unselect;
 begin
   if selected then kill_selection;
   SetStatusPanel('');
+  (owner as TImageGraph2TxtDocument).coord.image.Cursor:=crCross;
 end;
 
 procedure TCropTool.MouseDown(button: TMouseButton;shift: TShiftState; X,Y: Integer);
 var data:TImageGraph2TxtDocument;
+    s: Real;
 begin
   mouse_down:=true;
   data:=owner as TImageGraph2TxtDocument;
+  s:=data.scale;
   if selected then begin
     //скорее всего, снимаем выделение
-
+    case state of
+      sDeselect: begin
+        kill_selection;
+        reset_selection;
+      end;
+      sCrop: begin
+        data.DispatchCommand(TCropImageCommand.Create(Round(startx/s),Round(starty/s),Round(curx/s),Round(cury/s)));
+        reset_selection;
+        startx:=X;
+        starty:=Y;
+        curx:=X;
+        curY:=Y;
+      end;
+    end;
   end
   else begin
     //рамочки пока еще нет, отмечаем первую точку
@@ -255,9 +282,31 @@ begin
 end;
 
 procedure TCropTool.set_state(astate: TCropToolState);
+var img: TImage;
+    s: string;
 begin
-
-
+  img:=(owner as TImageGraph2TxtDocument).coord.image;
+  fstate:=astate;
+  s:='Изменение размера рамки';
+  with img do begin
+    case astate of
+      sSizeTopLeft,sSizeBottomRight: Cursor:=crSizeNWSE;
+      sSizeBottomLeft,sSizeTopRight: Cursor:=crSizeNESW;
+      sSizeLeft,sSizeRight: Cursor:=crSizeWE;
+      sSizeTop,sSizeBottom: Cursor:=crSizeNS;
+      sCrop:
+        begin
+        Cursor:=crHandPoint;
+        s:='Обрезать по рамке';
+        end;
+      sDeselect:
+        begin
+        Cursor:=crCross;
+        s:='Снять выделение';
+        end;
+    end;
+  end;
+  SetStatusPanel(s);
 end;
 
 procedure TCropTool.MouseMove(Shift: TShiftState; X,Y: Integer);
@@ -268,57 +317,47 @@ img:=(owner as TImageGraph2TxtDocument).coord.image;
 if selected then begin
   //проверяем, как мы расположены отн. рамочки
   if mouse_down then begin
-
-
+    kill_selection;
+    case state of
+      sSizeTopLeft: begin
+        startx:=X;
+        starty:=Y;
+      end;
+      sSizeBottomLeft: begin
+        startx:=X;
+        cury:=Y;
+      end;
+      sSizeLeft: startx:=X;
+      sSizeTopRight: begin
+        curX:=X;
+        startY:=Y;
+      end;
+      sSizeBottomRight: begin
+        curX:=X;
+        curY:=Y;
+      end;
+      sSizeRight: curX:=X;
+      sSizeTop: starty:=Y;
+      sSizeBottom: cury:=Y;
+    end;
+    img.canvas.Rectangle(startX,startY,curX,curY);
   end
   else begin
     if (X<curx+sensitivity) and (X>startx-sensitivity) and (Y<cury+sensitivity) and (Y>starty-sensitivity) then begin
 
-      if abs(X-startx)<=sensitivity then begin
-        if abs(Y-starty)<=sensitivity then begin
-          img.Cursor:=crSizeNWSE;
-          state:=sSizeTopLeft;
-        end
-        else if abs(Y-curY)<=sensitivity then begin
-          img.Cursor:=crSizeNESW;
-          state:=sSizeBottomLeft;
-          end
-          else begin
-            img.Cursor:=crSizeWE;
-            state:=sSizeLeft;
-          end;
-      end
-      else if abs(X-curx)<=sensitivity then begin
-        if abs(Y-starty)<=sensitivity then begin
-          img.Cursor:=crSizeNESW;
-          state:=sSizeTopRight;
-        end
-        else if abs(Y-curY)<=sensitivity then begin
-          img.Cursor:=crSizeNWSE;
-          state:=sSizeBottomRight;
-          end
-          else begin
-            img.Cursor:=crSizeWE;
-            state:=sSizeRight;
-          end;
-        end
-        else if abs(Y-startY)<=sensitivity then begin
-          img.Cursor:=crSizeNS;
-          state:=sSizeTop;
-          end
-          else if abs(Y-curY)<=sensitivity then begin
-            img.Cursor:=crSizeNs;
-            state:=sSizeBottom;
-            end
-            else begin
-              img.Cursor:=crHandPoint;
-              state:=sCrop;
-            end;
-     end
-     else begin
-      img.Cursor:=crCross;
-      state:=sDeselect;
-     end;
+      if abs(X-startx)<=sensitivity then
+        if abs(Y-starty)<=sensitivity then state:=sSizeTopLeft
+        else if abs(Y-curY)<=sensitivity then state:=sSizeBottomLeft
+          else state:=sSizeLeft
+      else if abs(X-curx)<=sensitivity then
+        if abs(Y-starty)<=sensitivity then state:=sSizeTopRight
+          else if abs(Y-curY)<=sensitivity then state:=sSizeBottomRight
+            else state:=sSizeRight
+        else if abs(Y-startY)<=sensitivity then state:=sSizeTop
+          else if abs(Y-curY)<=sensitivity then state:=sSizeBottom
+            else state:=sCrop
+    end
+    else state:=sDeselect;
   end;
 end
 else begin
