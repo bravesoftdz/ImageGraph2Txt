@@ -1,0 +1,83 @@
+object TImageGraph2TxtDocument
+  enableSaveWithUndo = True
+  SaveType = fCyr
+  coord.xmax = 10.000000000000000000
+  coord.ymax = 10.000000000000000000
+  coord.pix_x0 = 0
+  coord.pix_y0 = 0
+  coord.pix_xmax = 0
+  coord.pix_ymax = 0
+  coord.zero_picked = False
+  coord.xmax_picked = False
+  coord.ymax_picked = False
+  coord.log_xaxis = True
+  coord.log_Yaxis = False
+  coord.swapXY = False
+  coord.LineColor = clLime
+  object UndoList: TCommandList
+    count = 12
+    current = 12
+    object TChangeBoolProperty
+      Path = 'coord.swapXY'
+      Value = True
+    end
+    object TChangeBoolProperty
+      Path = 'coord.log_Xaxis'
+      Value = True
+    end
+    object TChangeBoolProperty
+      Path = 'coord.log_yaxis'
+      Value = True
+    end
+    object TChangeBoolProperty
+      Path = 'coord.swapXY'
+      Value = False
+    end
+    object TChangeBoolProperty
+      Path = 'coord.log_yaxis'
+      Value = False
+    end
+    object TChangeIntegerProperty
+      Path = 'coord.LineColor'
+      value = 255
+      backup = 128
+    end
+    object TChangeIntegerProperty
+      Path = 'coord.LineColor'
+      value = 16711680
+      backup = 255
+    end
+    object TChangeIntegerProperty
+      Path = 'coord.LineColor'
+      value = 16776960
+      backup = 16711680
+    end
+    object TChangeIntegerProperty
+      Path = 'coord.LineColor'
+      value = 255
+      backup = 16776960
+    end
+    object TChangeIntegerProperty
+      Path = 'coord.LineColor'
+      value = 16711680
+      backup = 255
+    end
+    object TChangeIntegerProperty
+      Path = 'coord.LineColor'
+      value = 32768
+      backup = 16711680
+    end
+    object TChangeIntegerProperty
+      Path = 'coord.LineColor'
+      value = 65280
+      backup = 32768
+    end
+  end
+  object tool: TAddPointTool
+    ButtonName = 'menuAddPointsTool'
+  end
+  object TChangeEnumProperty
+    Path = 'coord.LineColor'
+    ValName = 'clRed'
+  end
+end

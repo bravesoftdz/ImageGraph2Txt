@@ -209,23 +209,6 @@ begin
   end;
 end;
 
-(*
-procedure kill_selection;
-//убрать выделение
-begin
-  with form1.image1.Canvas do begin
-      Pen.Mode:=pmNotXor;
-      pen.Style:=psDot;
-      pen.Width:=1;
-      brush.Color:=clWhite;
-      Rectangle(start_P.X,start_P.Y,cur_P.X,cur_P.Y);
-  end;
-  if state=2 then state:=1;
-  form1.menuCrop.Enabled:=false;
-  form1.btnCrop.Enabled:=false;
-end;
-*)
-
 procedure reset_picture;
 begin
   with form1 do begin
@@ -237,7 +220,7 @@ begin
 end;
 
 procedure repaint_graph;
-var i,xt,yt,xmin,xmax: Integer;
+var i,xt,yt,xmin,xmax,tmp: Integer;
     scale: Real;
 begin
   scale:=Data.scale;
@@ -249,25 +232,40 @@ begin
       form1.Image1.Canvas.Pen.Color:=data.coord.LineColor;
     if data.coord.swapXY then begin
       yt:=round(data.coord.Y_axis2pix(data.coord.t.xmax)*scale);
-      xt:=round(data.coord.X_axis2pix(data.coord.t[data.coord.t.xmax])*scale);
-      form1.Image1.Canvas.MoveTo(xt,yt);
-      xmin:=yt;
       xmax:=round(data.coord.Y_axis2pix(data.coord.t.xmin)*scale);
+      if xmax>yt then begin
+        xt:=round(data.coord.X_axis2pix(data.coord.t[data.coord.t.xmax])*scale);
+        xmin:=yt;
+      end
+      else begin
+        xt:=round(data.coord.X_axis2pix(data.coord.t[data.coord.t.xmin])*scale);
+        xmin:=xmax;
+        xmax:=yt;
+      end;
+      form1.Image1.Canvas.MoveTo(xt,yt);
       for i:=xmin to xmax do begin
         form1.Image1.Canvas.lineto(Round(data.coord.X_axis2pix(data.coord.t[data.coord.Y_pix2axis(Round(i/scale))])*scale),i);
       end;
     end
     else begin
       xt:=round(data.coord.X_axis2pix(data.coord.t.xmin)*scale);
-      yt:=round(data.coord.Y_axis2pix(data.coord.t[data.coord.t.xmin])*scale);
-      form1.Image1.Canvas.MoveTo(xt,yt);
-      xmin:=xt;
       xmax:=round(data.coord.X_axis2pix(data.coord.t.xmax)*scale);
+      if xmax>xt then begin
+        yt:=round(data.coord.Y_axis2pix(data.coord.t[data.coord.t.xmin])*scale);
+        xmin:=xt;
+      end
+      else begin
+        yt:=round(data.coord.Y_axis2pix(data.coord.t[data.coord.t.xmax])*scale);
+        xmin:=xmax;
+        xmax:=xt;
+      end;
+      form1.Image1.Canvas.MoveTo(xmin,yt);
       for i:=xmin to xmax do begin
         form1.Image1.Canvas.lineto(i,Round(data.coord.Y_axis2pix(data.coord.t[data.coord.X_pix2axis(Round(i/scale))])*scale));
       end;
     end;
   end;
+  if Assigned(data.tool) then data.tool.Select;
 end;
 
 procedure TForm1.gui_refresh(sender: TObject);
@@ -400,28 +398,22 @@ end;
 
 procedure TForm1.chkYLogClick(Sender: TObject);
 begin
-  data.DispatchCommand(TChangeBoolCommand.Create(data.coord.flog_Yaxis,data.coord.invert_bool,chkYLog.Checked,'Log y'));
-//  c.log_Yaxis:=chkYLog.Checked;
+  data.DispatchCommand(TChangeBoolProperty.Create('coord.log_yaxis',chkYLog.Checked));
 end;
 
 procedure TForm1.chkXLogClick(Sender: TObject);
 begin
-  data.DispatchCommand(TChangeBoolCommand.Create(data.coord.flog_Xaxis,data.coord.invert_bool,chkXLog.Checked,'Log X'));
-//  c.log_Xaxis:=chkXLog.Checked;
+  data.DispatchCommand(TChangeBoolProperty.Create('coord.log_Xaxis',chkXLog.Checked));
 end;
 
 procedure TForm1.chkSwapXYClick(Sender: TObject);
 begin
-//  dispatch_command(TChangeFloatProperty.Create('coord.swapXY',0));
-  repaint_graph;
+  data.DispatchCommand(TChangeBoolProperty.Create('coord.swapXY',chkSwapXY.Checked));
 end;
 
 procedure TForm1.FormShow(Sender: TObject);
 begin
-if FileExists(CurProjectFilename) then Load_Project(CurProjectFilename);
-//  chkSwapXYClick(Form1);
-//  chkXLogClick(Form1);
-//  chkYLogClick(Form1);
+  if FileExists(CurProjectFilename) then Load_Project(CurProjectFilename);
   Form1.WindowState:=wsMaximized;
   refresh_undo_gui;
 end;
@@ -510,7 +502,8 @@ end;
 
 procedure TForm1.ColorBox1Change(Sender: TObject);
 begin
-  data.coord.LineColor:=ColorBox1.Selected;
+//  data.coord.LineColor:=ColorBox1.Selected;
+  data.DispatchCommand(TChangeIntegerProperty.Create('coord.LineColor',ColorBox1.Selected,cfHex));
   repaint_graph;
 end;
 

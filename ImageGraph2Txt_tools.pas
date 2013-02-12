@@ -151,18 +151,20 @@ end;
 
 procedure TAddAxisTool.MouseDown(button: TMouseButton;shift: TShiftState; X,Y: Integer);
 var data:TImageGraph2TxtDocument;
+    s: Real;
 begin
   data:=owner as TImageGraph2TxtDocument;
+  s:=data.scale;
   if state=sSetZero then begin
     data.coord.xmax_picked:=false;
     data.coord.ymax_picked:=false;
-    data.DispatchCommand(TSetZeroCommand.Create(X,Y));
+    data.DispatchCommand(TSetZeroCommand.Create(Round(X/s),Round(Y/s)));
     if data.coord.zero_picked then begin
       ChangeState(sSetAxisPoint);
     end;
   end
   else begin
-    data.DispatchCommand(TSetAxisCommand.Create(X,Y));
+    data.DispatchCommand(TSetAxisCommand.Create(Round(X/s),Round(Y/s)));
     if (data.coord.xmax_picked) and (data.coord.ymax_picked) then ChangeState(sSetZero);
   end;
 end;
