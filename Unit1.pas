@@ -26,7 +26,6 @@ type
     chkYLog: TCheckBox;
     TabSheet3: TTabSheet;
     StatusBar1: TStatusBar;
-    btnSaveBmp: TButton;
     ColorBox1: TColorBox;
     Label2: TLabel;
     Button2: TButton;
@@ -289,7 +288,6 @@ begin
     form1.menuAddPointsTool.Click;
   end;
   form1.gui_refresh(data);
-  data.tool.Select;
 end;
 
 procedure Load_project(FileName: string);
@@ -314,43 +312,12 @@ procedure TForm1.Image1MouseDown(Sender: TObject; Button: TMouseButton;
 begin
   if Assigned(data.tool) then
   data.tool.MouseDown(Button,Shift,X,Y);
-(*
-  Case state of
-  1: begin
-    mouse_down:=True;
-    start_P:=Point(X,Y);
-    cur_P:=start_P;
-    end;
-  2: begin
-    //снимаем старое выделение, потом по-новой
-    kill_selection;
-    start_P:=Point(X,Y);
-    cur_P:=start_P;
-    mouse_down:=true;
-    end;
-  3: begin
-    data.DispatchCommand(TSetZeroCommand.Create(Round(X/data.scale),Round(Y/data.scale)));
-    state:=4;
-    statusbar1.Panels[0].Text:='Отметьте точки на осях';
-    end;
-  4: begin
-    data.DispatchCommand(TSetAxisCommand.Create(Round(X/data.scale),Round(Y/data.scale)));
-    if data.coord.status then begin
-      state:=5;
-      statusbar1.Panels[0].Text:='Построение графика';
-      SpeedButton1.Down:=true;
-    end;
-   end;
-
-  end;
-  *)
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
 default_dir:=GetCurrentDir;
 
-//state:=0;
 pic:=TPicture.Create;
 
 data:=TImageGraph2TxtDocument.Create(nil);
@@ -503,7 +470,7 @@ end;
 procedure TForm1.ColorBox1Change(Sender: TObject);
 begin
 //  data.coord.LineColor:=ColorBox1.Selected;
-  data.DispatchCommand(TChangeIntegerProperty.Create('coord.LineColor',ColorBox1.Selected,cfHex));
+  data.DispatchCommand(TChangeIntegerProperty.Create('coord.LineColor',ColorBox1.Selected,'LineColor='+ColorToString(ColorBox1.Selected)));
   repaint_graph;
 end;
 

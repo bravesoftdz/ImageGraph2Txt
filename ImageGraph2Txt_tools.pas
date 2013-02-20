@@ -55,6 +55,7 @@ private
   procedure Kill_selection;
   procedure reset_selection;
   procedure set_state(astate: TCropToolState);
+  function scale: Real;
   property state: TCropToolState read fstate write set_state;
 public
   procedure Select; override;
@@ -183,6 +184,11 @@ end;
       TCropTool
                       *)
 
+function TCropTool.scale: Real;
+begin
+  Result:=(owner as tImageGraph2TxtDocument).scale;
+end;
+
 procedure TCropTool.Kill_selection;
 var canv: TCanvas;
 begin
@@ -193,7 +199,7 @@ begin
     pen.Width:=1;
     pen.Color:=clBlack;
     brush.Color:=clWhite;
-    Rectangle(startX,startY,curX,curY);
+    Rectangle(Round(startX*scale),Round(startY*scale),Round(curX*scale),Round(curY*scale));
   end;
 end;
 
@@ -226,11 +232,9 @@ end;
 
 procedure TCropTool.MouseDown(button: TMouseButton;shift: TShiftState; X,Y: Integer);
 var data:TImageGraph2TxtDocument;
-    s: Real;
 begin
   mouse_down:=true;
   data:=owner as TImageGraph2TxtDocument;
-  s:=data.scale;
   if selected then begin
     //скорее всего, снимаем выделение
     case state of
@@ -239,21 +243,22 @@ begin
         reset_selection;
       end;
       sCrop: begin
-        data.DispatchCommand(TCropImageCommand.Create(Round(startx/s),Round(starty/s),Round(curx/s),Round(cury/s)));
+        selected:=false;
+        data.DispatchCommand(TCropImageCommand.Create(Round(startx),Round(starty),Round(curx),Round(cury)));
         reset_selection;
-        startx:=X;
-        starty:=Y;
-        curx:=X;
-        curY:=Y;
+        startx:=Round(X/scale);
+        starty:=Round(Y/scale);
+        curx:=startx;
+        curY:=starty;
       end;
     end;
   end
   else begin
     //рамочки пока еще нет, отмечаем первую точку
-    startx:=X;
-    starty:=Y;
-    curx:=X;
-    cury:=Y;
+    startx:=Round(X/scale);
+    starty:=Round(Y/scale);
+    curx:=startX;
+    cury:=startY;
   end;
 end;
 
@@ -313,50 +318,52 @@ end;
 
 procedure TCropTool.MouseMove(Shift: TShiftState; X,Y: Integer);
 var img: TImage;
-
+    xsc,ysc: Integer;
 begin
 img:=(owner as TImageGraph2TxtDocument).coord.image;
+xsc:=Round(X/scale);
+ysc:=Round(Y/scale);
 if selected then begin
   //проверяем, как мы расположены отн. рамочки
   if mouse_down then begin
     kill_selection;
     case state of
       sSizeTopLeft: begin
-        startx:=X;
-        starty:=Y;
+        startx:=Xsc;
+        starty:=Ysc;
       end;
       sSizeBottomLeft: begin
-        startx:=X;
-        cury:=Y;
+        startx:=Xsc;
+        cury:=Ysc;
       end;
-      sSizeLeft: startx:=X;
+      sSizeLeft: startx:=Xsc;
       sSizeTopRight: begin
-        curX:=X;
-        startY:=Y;
+        curX:=Xsc;
+        startY:=Ysc;
       end;
       sSizeBottomRight: begin
-        curX:=X;
-        curY:=Y;
+        curX:=Xsc;
+        curY:=Ysc;
       end;
-      sSizeRight: curX:=X;
-      sSizeTop: starty:=Y;
-      sSizeBottom: cury:=Y;
+      sSizeRight: curX:=Xsc;
+      sSizeTop: starty:=Ysc;
+      sSizeBottom: cury:=Ysc;
     end;
-    img.canvas.Rectangle(startX,startY,curX,curY);
+    img.canvas.Rectangle(Round(startX*scale),Round(startY*scale),Round(curX*scale),Round(curY*scale));
   end
   else begin
-    if (X<curx+sensitivity) and (X>startx-sensitivity) and (Y<cury+sensitivity) and (Y>starty-sensitivity) then begin
+    if (Xsc<curx+sensitivity) and (Xsc>startx-sensitivity) and (Ysc<cury+sensitivity) and (Ysc>starty-sensitivity) then begin
 
-      if abs(X-startx)<=sensitivity then
-        if abs(Y-starty)<=sensitivity then state:=sSizeTopLeft
-        else if abs(Y-curY)<=sensitivity then state:=sSizeBottomLeft
+      if abs(Xsc-startx)<=sensitivity then
+        if abs(Ysc-starty)<=sensitivity then state:=sSizeTopLeft
+        else if abs(Ysc-curY)<=sensitivity then state:=sSizeBottomLeft
           else state:=sSizeLeft
-      else if abs(X-curx)<=sensitivity then
-        if abs(Y-starty)<=sensitivity then state:=sSizeTopRight
-          else if abs(Y-curY)<=sensitivity then state:=sSizeBottomRight
+      else if abs(Xsc-curx)<=sensitivity then
+        if abs(Ysc-starty)<=sensitivity then state:=sSizeTopRight
+          else if abs(Ysc-curY)<=sensitivity then state:=sSizeBottomRight
             else state:=sSizeRight
-        else if abs(Y-startY)<=sensitivity then state:=sSizeTop
-          else if abs(Y-curY)<=sensitivity then state:=sSizeBottom
+        else if abs(Ysc-startY)<=sensitivity then state:=sSizeTop
+          else if abs(Ysc-curY)<=sensitivity then state:=sSizeBottom
             else state:=sCrop
     end
     else state:=sDeselect;
@@ -365,9 +372,9 @@ end
 else begin
   if mouse_down then begin
     kill_selection; //стираем старую рамочку, если таковая имелась
-    curX:=X;
-    curY:=Y;
-    img.canvas.Rectangle(startX,startY,curX,curY);
+    curX:=Xsc;
+    curY:=Ysc;
+    img.canvas.Rectangle(Round(startX*scale),Round(startY*scale),Round(curX*scale),Round(curY*scale));
   end;
 end;
 

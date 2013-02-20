@@ -93,6 +93,7 @@ begin
   dat_ymax:=10;
   t:=table_func.Create;
   raw_data:=table_func.Create;
+  raw_data.Tolerance:=0.01;
   LineColor:=clBlack;
   SetSubComponent(true);
 end;
