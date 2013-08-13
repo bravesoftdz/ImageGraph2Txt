@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 358
-  Top = 122
+  Left = 348
+  Top = 206
   Width = 626
   Height = 370
   Caption = 'graph2txt v. 0.2'
@@ -53,7 +53,7 @@ object Form1: TForm1
     Top = 146
     Width = 609
     Height = 137
-    ActivePage = TabSheet2
+    ActivePage = TabSheet3
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
     object TabSheet2: TTabSheet
@@ -212,13 +212,12 @@ object Form1: TForm1
         Height = 21
         Style = csDropDownList
         ItemHeight = 13
-        ItemIndex = 2
         TabOrder = 3
-        Text = '3'
         OnChange = ComboBox1Change
         Items.Strings = (
           '0'
           '1'
+          '2'
           '3')
       end
       object LabeledEdit1: TLabeledEdit
@@ -563,7 +562,7 @@ object Form1: TForm1
     Left = 280
     Top = 56
     Bitmap = {
-      494C01010C000E00040020002000FFFFFFFFFF00FFFFFFFFFFFFFFFF424D3600
+      494C01010C000E00040020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000008000000001002000000000000000
       0100000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -2679,7 +2678,8 @@ object Form1: TForm1
       F800003FFFFFC007C0000001E0000003F800007FFFFFE03FC0000001E0001003
       F80000FFFFFFFFFFC0002001E0000003F80001FFFFFFFFFFC0000003E0000003
       F80003FFFFFFFFFFC0000003FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}
+      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000
+      000000000000}
   end
   object menuUndoList: TPopupMenu
     OnPopup = menuUndoListPopup

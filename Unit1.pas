@@ -7,7 +7,7 @@ uses
   Dialogs, table_func_lib, ExtCtrls, ExtDlgs, StdCtrls,coord_system_lib,
   TeEngine, Series, TeeProcs, Chart,Clipbrd, ComCtrls,math, Buttons,GraphicEx,command_class_lib,
   imageGraph2Txt_Commands, XPMan, ImgList, ToolWin, streaming_class_lib,imagegraph2txt_data,pngimage,
-  Menus,FormPreferences,ImageGraph2Txt_tools;
+  Menus,FormPreferences,ImageGraph2Txt_tools,family_of_curves_lib;
 
 type
   TForm1 = class(TForm)

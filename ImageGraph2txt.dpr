@@ -22,7 +22,8 @@ uses
   pnglang in '..\pngimage\pnglang.pas',
   zlibpas in '..\pngimage\zlibpas.pas',
   FormPreferences in 'FormPreferences.pas' {frmPrefs},
-  ImageGraph2Txt_tools in 'ImageGraph2Txt_tools.pas';
+  ImageGraph2Txt_tools in 'ImageGraph2Txt_tools.pas',
+  family_of_curves_lib in '..\lib\family_of_curves_lib.pas';
 
 {$R *.res}
 
