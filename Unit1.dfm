@@ -2,7 +2,7 @@ object Form1: TForm1
   Left = 348
   Top = 206
   Width = 626
-  Height = 370
+  Height = 380
   Caption = 'graph2txt v. 0.2'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -22,24 +22,24 @@ object Form1: TForm1
   OnShow = FormShow
   DesignSize = (
     618
-    316)
+    334)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
     Left = 0
     Top = 56
     Width = 613
-    Height = 91
+    Height = 89
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     DesignSize = (
       609
-      87)
+      85)
     object Image1: TImage
       Left = 0
       Top = 0
       Width = 613
-      Height = 91
+      Height = 89
       Cursor = crCross
       Anchors = [akLeft, akTop, akRight, akBottom]
       AutoSize = True
@@ -50,9 +50,9 @@ object Form1: TForm1
   end
   object PageControl1: TPageControl
     Left = 0
-    Top = 146
+    Top = 152
     Width = 609
-    Height = 137
+    Height = 145
     ActivePage = TabSheet3
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
@@ -189,7 +189,7 @@ object Form1: TForm1
       end
       object Button2: TButton
         Left = 0
-        Top = 68
+        Top = 84
         Width = 113
         Height = 25
         Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
@@ -198,7 +198,7 @@ object Form1: TForm1
       end
       object btnResetPoints: TButton
         Left = 0
-        Top = 40
+        Top = 32
         Width = 113
         Height = 25
         Caption = #1054#1073#1085#1091#1083#1080#1090#1100
@@ -264,11 +264,20 @@ object Form1: TForm1
         TabOrder = 7
         OnChange = Memo1Change
       end
+      object btnDataToClipbrd: TButton
+        Left = 0
+        Top = 58
+        Width = 113
+        Height = 25
+        Caption = #1042' '#1073#1091#1092#1077#1088' '#1086#1073#1084#1077#1085#1072
+        TabOrder = 8
+        OnClick = btnDataToClipbrdClick
+      end
     end
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 290
+    Top = 308
     Width = 618
     Height = 26
     Panels = <

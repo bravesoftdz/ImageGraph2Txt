@@ -86,6 +86,7 @@ type
     ToolButton2: TToolButton;
     menuUndoList: TPopupMenu;
     menuRedoList: TPopupMenu;
+    btnDataToClipbrd: TButton;
     procedure btnLoadImageClick(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -158,6 +159,7 @@ type
     procedure ProcessUndoMenu(Sender: TObject);
     procedure menuRedoListPopup(Sender: TObject);
     procedure ProcessRedoMenu(Sender: TObject);
+    procedure btnDataToClipbrdClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -205,6 +207,7 @@ begin
     chkYLog.Checked:=data.coord.log_Yaxis;
     chkSwapXY.Checked:=data.coord.swapXY;
     colorBox1.Selected:=data.coord.LineColor;
+    Combobox1.ItemIndex:=data.coord.raw_data.order;
   end;
 end;
 
@@ -476,7 +479,8 @@ end;
 
 procedure TForm1.ComboBox1Change(Sender: TObject);
 begin
-  data.coord.t.order:=StrToInt(ComboBox1.Text);
+//  data.coord.t.order:=StrToInt(ComboBox1.Text);
+  data.DispatchCommand(TChangeIntegerProperty.Create('coord.raw_data.order',StrToInt(ComboBox1.Text),'Order='+ComboBox1.Text));
   repaint_graph;
 end;
 
@@ -852,6 +856,11 @@ begin
     menuRedoList.Items.Insert(j,item);
     inc(j);
   end;
+end;
+
+procedure TForm1.btnDataToClipbrdClick(Sender: TObject);
+begin
+  Clipboard.AsText:=data.coord.t.AsTabbedText;
 end;
 
 end.
