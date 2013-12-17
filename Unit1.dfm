@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 348
-  Top = 206
+  Left = 422
+  Top = 268
   Width = 626
   Height = 380
   Caption = 'graph2txt v. 0.2'

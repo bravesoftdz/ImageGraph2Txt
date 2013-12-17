@@ -107,7 +107,6 @@ type
       Y: Integer);
     procedure Image1MouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure btnCropClick(Sender: TObject);
     procedure btnSaveBmpClick(Sender: TObject);
     procedure ColorBox1Change(Sender: TObject);
     procedure ComboBox1Change(Sender: TObject);
@@ -135,7 +134,6 @@ type
     procedure menuRedoClick(Sender: TObject);
     procedure menuLoadImageClick(Sender: TObject);
     procedure menuPasteClick(Sender: TObject);
-    procedure menuCropClick(Sender: TObject);
     procedure menuSaveImageAsClick(Sender: TObject);
     procedure menuClearDataPointsClick(Sender: TObject);
     procedure menuSaveDataPointsClick(Sender: TObject);
@@ -183,7 +181,6 @@ implementation
 
 
 procedure refresh_undo_gui;
-var i: Integer;
 begin
   with Form1 do begin
 
@@ -222,7 +219,7 @@ begin
 end;
 
 procedure repaint_graph;
-var i,xt,yt,xmin,xmax,tmp: Integer;
+var i,xt,yt,xmin,xmax: Integer;
     scale: Real;
 begin
   scale:=Data.scale;
@@ -424,45 +421,14 @@ begin
   end;
   if assigned(data.tool) then
     data.tool.MouseMove(Shift,X,Y);
-(*
-    Case state of
-    0: Text:='Изображение не выбрано';
-    1..2: Text:='Вырезать прямоугольную область';
-    3: Text:='Отметьте начало координат';
-    4: Text:='Отметьте точки на осях';
-    5: Text:='Построение графика';
-    end;
-  *)
-
-(*
-  if mouse_down then begin
-    with image1.Canvas do begin
-      kill_selection;
-      cur_P:=Point(X,Y);
-      Rectangle(start_P.X,start_P.Y,cur_P.X,cur_P.Y);
-    end;
-  end;
-  *)
 end;
 
 procedure TForm1.Image1MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
-var
-  tmp: integer;
 begin
-(*
 
-  if state=1 then
-    else
-      kill_selection;
-*)
   if assigned(data.tool) then
     data.tool.MouseUp(Button,Shift,X,Y);
-end;
-
-procedure TForm1.btnCropClick(Sender: TObject);
-begin
-  menuCropClick(nil);
 end;
 
 procedure TForm1.btnSaveBmpClick(Sender: TObject);
@@ -472,14 +438,12 @@ end;
 
 procedure TForm1.ColorBox1Change(Sender: TObject);
 begin
-//  data.coord.LineColor:=ColorBox1.Selected;
   data.DispatchCommand(TChangeIntegerProperty.Create('coord.LineColor',ColorBox1.Selected,'LineColor='+ColorToString(ColorBox1.Selected)));
   repaint_graph;
 end;
 
 procedure TForm1.ComboBox1Change(Sender: TObject);
 begin
-//  data.coord.t.order:=StrToInt(ComboBox1.Text);
   data.DispatchCommand(TChangeIntegerProperty.Create('coord.raw_data.order',StrToInt(ComboBox1.Text),'Order='+ComboBox1.Text));
   repaint_graph;
 end;
@@ -671,15 +635,6 @@ begin
   data.DispatchCommand(TLoadImageCommand.New(btmp));
 //  state:=1;
   StatusBar1.Panels[0].Text:='Вырезать прямоугольный участок';
-end;
-
-procedure TForm1.menuCropClick(Sender: TObject);
-var scale: Real;
-begin
-//сначала убьем рамочку
-//kill_selection;
-scale:=data.scale;
-//data.DispatchCommand(TCropImageCommand.Create(Round(start_P.X/scale),Round(start_P.Y/scale),Round(cur_P.X/scale),Round(cur_P.Y/scale)));
 end;
 
 procedure TForm1.menuSaveImageAsClick(Sender: TObject);
