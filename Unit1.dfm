@@ -1,7 +1,7 @@
 object Form1: TForm1
   Left = 245
   Top = 222
-  Width = 626
+  Width = 582
   Height = 380
   Caption = 'graph2txt v. 0.2'
   Color = clBtnFace
@@ -21,24 +21,24 @@ object Form1: TForm1
   OnMouseWheelUp = FormMouseWheelUp
   OnShow = FormShow
   DesignSize = (
-    618
+    574
     334)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
     Left = 0
     Top = 56
-    Width = 613
+    Width = 569
     Height = 89
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     DesignSize = (
-      609
+      565
       85)
     object Image1: TImage
       Left = 0
       Top = 0
-      Width = 613
+      Width = 569
       Height = 89
       Cursor = crCross
       Anchors = [akLeft, akTop, akRight, akBottom]
@@ -51,7 +51,7 @@ object Form1: TForm1
   object PageControl1: TPageControl
     Left = 0
     Top = 152
-    Width = 609
+    Width = 565
     Height = 145
     ActivePage = TabSheet3
     Anchors = [akLeft, akRight, akBottom]
@@ -278,7 +278,7 @@ object Form1: TForm1
   object StatusBar1: TStatusBar
     Left = 0
     Top = 308
-    Width = 618
+    Width = 574
     Height = 26
     Panels = <
       item
@@ -292,7 +292,7 @@ object Form1: TForm1
   object ToolBar1: TToolBar
     Left = 0
     Top = 0
-    Width = 618
+    Width = 574
     Height = 57
     ButtonHeight = 40
     ButtonWidth = 40
@@ -302,34 +302,26 @@ object Form1: TForm1
     object btnNew: TToolButton
       Left = 0
       Top = 2
-      Hint = #1053#1086#1074#1099#1081' '#1087#1088#1086#1077#1082#1090
-      Caption = 'btnNew'
+      Action = NewProjectAction1
       ImageIndex = 0
-      OnClick = btnNewClick
     end
     object btnOpenProject: TToolButton
       Left = 40
       Top = 2
-      Hint = #1054#1090#1082#1088#1099#1090#1100' '#1087#1088#1086#1077#1082#1090
-      Caption = 'btnOpenProject'
+      Action = OpenProjectAction1
       ImageIndex = 1
-      OnClick = btnOpenProjectClick
     end
     object btnSaveProject: TToolButton
       Left = 80
       Top = 2
-      Hint = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1087#1088#1086#1077#1082#1090
-      Caption = 'btnSaveProject'
+      Action = SaveProjectAction1
       ImageIndex = 2
-      OnClick = btnSaveProjectClick
     end
     object btnSaveProjectAs: TToolButton
       Left = 120
       Top = 2
-      Hint = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1087#1088#1086#1077#1082#1090' '#1082#1072#1082'..'
-      Caption = 'btnSaveProjectAs'
+      Action = SaveProjectAsAction1
       ImageIndex = 3
-      OnClick = btnSaveProjectAsClick
     end
     object ToolButton3: TToolButton
       Left = 160
@@ -464,21 +456,16 @@ object Form1: TForm1
     object N1: TMenuItem
       Caption = #1055#1088#1086#1077#1082#1090
       object menuNewProject: TMenuItem
-        Caption = #1053#1086#1074#1099#1081
-        ShortCut = 16462
-        OnClick = menuNewProjectClick
+        Action = NewProjectAction1
       end
       object menuOpenProject: TMenuItem
-        Caption = #1054#1090#1082#1088#1099#1090#1100
-        OnClick = menuOpenProjectClick
+        Action = OpenProjectAction1
       end
       object menuSaveProject: TMenuItem
-        Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
-        OnClick = menuSaveProjectClick
+        Action = SaveProjectAction1
       end
       object menuSaveProjectAs: TMenuItem
-        Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1082#1072#1082
-        OnClick = menuSaveProjectAsClick
+        Action = SaveProjectAsAction1
       end
       object MenuPreferences: TMenuItem
         Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
@@ -2704,5 +2691,31 @@ object Form1: TForm1
     OnPopup = menuRedoListPopup
     Left = 184
     Top = 64
+  end
+  object AbstractDocumentActionList1: TAbstractDocumentActionList
+    Left = 544
+    Top = 8
+    object NewProjectAction1: TNewProjectAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1053#1086#1074#1099#1081' '#1087#1088#1086#1077#1082#1090
+    end
+    object OpenProjectAction1: TOpenProjectAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1054#1090#1082#1088#1099#1090#1100' '#1087#1088#1086#1077#1082#1090
+      OpenDialog.DefaultExt = 'txt'
+      OpenDialog.Filter = #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.dat|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    end
+    object SaveProjectAsAction1: TSaveProjectAsAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1087#1088#1086#1077#1082#1090' '#1082#1072#1082'...'
+      SaveDialog.DefaultExt = 'txt'
+      SaveDialog.Filter = #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.dat|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    end
+    object SaveProjectAction1: TSaveProjectAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1087#1088#1086#1077#1082#1090
+      SaveDialog.DefaultExt = 'txt'
+      SaveDialog.Filter = #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.dat|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    end
   end
 end

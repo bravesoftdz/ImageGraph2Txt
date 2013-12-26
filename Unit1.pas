@@ -7,7 +7,8 @@ uses
   Dialogs, table_func_lib, ExtCtrls, ExtDlgs, StdCtrls,coord_system_lib,
   TeEngine, Series, TeeProcs, Chart,Clipbrd, ComCtrls,math, Buttons,GraphicEx,command_class_lib,
   imageGraph2Txt_Commands, XPMan, ImgList, ToolWin, streaming_class_lib,imagegraph2txt_data,pngimage,
-  Menus,FormPreferences,ImageGraph2Txt_tools,family_of_curves_lib,formHistory;
+  Menus,FormPreferences,ImageGraph2Txt_tools,family_of_curves_lib,formHistory,
+  abstract_document_actions, ActnList;
 
 type
   TForm1 = class(TForm)
@@ -88,6 +89,11 @@ type
     menuRedoList: TPopupMenu;
     btnDataToClipbrd: TButton;
     N3: TMenuItem;
+    AbstractDocumentActionList1: TAbstractDocumentActionList;
+    NewProjectAction1: TNewProjectAction;
+    OpenProjectAction1: TOpenProjectAction;
+    SaveProjectAsAction1: TSaveProjectAsAction;
+    SaveProjectAction1: TSaveProjectAction;
     procedure btnLoadImageClick(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -121,11 +127,7 @@ type
       MousePos: TPoint; var Handled: Boolean);
     procedure FormMouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
-    procedure menuNewProjectClick(Sender: TObject);
-    procedure menuOpenProjectClick(Sender: TObject);
     procedure gui_refresh(Sender: TObject);
-    procedure menuSaveProjectClick(Sender: TObject);
-    procedure menuSaveProjectAsClick(Sender: TObject);
     procedure MenuPreferencesClick(Sender: TObject);
     procedure menuZoomActualSizeClick(Sender: TObject);
     procedure menuZoomFitToPageClick(Sender: TObject);
@@ -139,10 +141,6 @@ type
     procedure menuClearDataPointsClick(Sender: TObject);
     procedure menuSaveDataPointsClick(Sender: TObject);
     procedure btnUndoClick(Sender: TObject);
-    procedure btnNewClick(Sender: TObject);
-    procedure btnSaveProjectClick(Sender: TObject);
-    procedure btnOpenProjectClick(Sender: TObject);
-    procedure btnSaveProjectAsClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnAddPointsToolClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -185,13 +183,6 @@ implementation
 procedure refresh_undo_gui;
 begin
   with Form1 do begin
-
-    menuNewProject.Enabled:=not data.isEmpty;
-    btnNew.Enabled:=menuNewProject.Enabled;
-
-    menuSaveProject.Enabled:=data.Changed;
-    btnSaveProject.Enabled:=menuSaveProject.Enabled;
-
     menuUndo.Enabled:=data.UndoTree.UndoEnabled;
     menuRedo.Enabled:=data.UndoTree.RedoEnabled;
 
@@ -321,6 +312,8 @@ begin
 default_dir:=GetCurrentDir;
 
 pic:=TPicture.Create;
+
+AbstractDocumentActionList1.doc:=@data;
 
 data:=TImageGraph2TxtDocument.Create(nil);
 make_connections;
@@ -524,40 +517,6 @@ begin
   Handled:=true;
 end;
 
-procedure TForm1.menuNewProjectClick(Sender: TObject);
-begin
-  if (not data.Changed) or (Application.MessageBox('Все действия и история изменений будут потеряны. Продолжить?','Новый проект',MB_YesNo)=IDYes) then begin
-    data.Free;
-    data:=TImageGraph2TxtDocument.Create(nil);
-    make_connections;
-  end;
-end;
-
-procedure TForm1.menuOpenProjectClick(Sender: TObject);
-begin
-  if (not data.Changed) or (Application.MessageBox('Все несохраненные действия и история изменений будут потеряны. Продолжить?','Открыть проект',MB_YesNo)=IDYes) then
-    if OpenDialog1.Execute then
-      Load_Project(OpenDialog1.FileName);
-end;
-
-procedure TForm1.menuSaveProjectClick(Sender: TObject);
-begin
-  if data.FileName='' then menuSaveProjectAsClick(Sender)
-  else begin
-    data.Save;
-    refresh_undo_gui;
-  end;
-end;
-
-procedure TForm1.menuSaveProjectAsClick(Sender: TObject);
-begin
-  if SaveTxt.Execute then begin
-    data.FileName:=SaveTxt.FileName;
-    data.Save;
-    refresh_undo_gui;
-  end;
-end;
-
 procedure TForm1.MenuPreferencesClick(Sender: TObject);
 begin
   with frmPrefs do begin
@@ -663,26 +622,6 @@ procedure TForm1.menuSaveDataPointsClick(Sender: TObject);
 begin
   if SaveTxt.Execute then
     data.coord.t.SaveToTextFile(SaveTxt.FileName);
-end;
-
-procedure TForm1.btnNewClick(Sender: TObject);
-begin
-  menuNewProjectClick(Sender);
-end;
-
-procedure TForm1.btnSaveProjectClick(Sender: TObject);
-begin
-  menuSaveProjectClick(Sender);
-end;
-
-procedure TForm1.btnOpenProjectClick(Sender: TObject);
-begin
-  menuOpenProjectClick(Sender);
-end;
-
-procedure TForm1.btnSaveProjectAsClick(Sender: TObject);
-begin
-  menuSaveProjectAsClick(Sender);
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
