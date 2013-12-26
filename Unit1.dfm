@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 422
-  Top = 268
+  Left = 245
+  Top = 222
   Width = 626
   Height = 380
   Caption = 'graph2txt v. 0.2'
@@ -496,6 +496,11 @@ object Form1: TForm1
         Caption = #1055#1086#1074#1090#1086#1088#1080#1090#1100
         ShortCut = 16473
         OnClick = menuRedoClick
+      end
+      object N3: TMenuItem
+        Caption = #1048#1089#1090#1086#1088#1080#1103
+        ShortCut = 16456
+        OnClick = N3Click
       end
     end
     object N2: TMenuItem

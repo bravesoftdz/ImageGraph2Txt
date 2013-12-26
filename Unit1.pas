@@ -7,7 +7,7 @@ uses
   Dialogs, table_func_lib, ExtCtrls, ExtDlgs, StdCtrls,coord_system_lib,
   TeEngine, Series, TeeProcs, Chart,Clipbrd, ComCtrls,math, Buttons,GraphicEx,command_class_lib,
   imageGraph2Txt_Commands, XPMan, ImgList, ToolWin, streaming_class_lib,imagegraph2txt_data,pngimage,
-  Menus,FormPreferences,ImageGraph2Txt_tools,family_of_curves_lib;
+  Menus,FormPreferences,ImageGraph2Txt_tools,family_of_curves_lib,formHistory;
 
 type
   TForm1 = class(TForm)
@@ -87,6 +87,7 @@ type
     menuUndoList: TPopupMenu;
     menuRedoList: TPopupMenu;
     btnDataToClipbrd: TButton;
+    N3: TMenuItem;
     procedure btnLoadImageClick(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -158,6 +159,7 @@ type
     procedure menuRedoListPopup(Sender: TObject);
     procedure ProcessRedoMenu(Sender: TObject);
     procedure btnDataToClipbrdClick(Sender: TObject);
+    procedure N3Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -190,8 +192,8 @@ begin
     menuSaveProject.Enabled:=data.Changed;
     btnSaveProject.Enabled:=menuSaveProject.Enabled;
 
-    menuUndo.Enabled:=data.UndoList.UndoEnabled;
-    menuRedo.Enabled:=data.UndoList.RedoEnabled;
+    menuUndo.Enabled:=data.UndoTree.UndoEnabled;
+    menuRedo.Enabled:=data.UndoTree.RedoEnabled;
 
     btnUndo.Enabled:=menuUndo.Enabled;
     btnRedo.Enabled:=menuRedo.Enabled;
@@ -768,15 +770,19 @@ end;
 procedure TForm1.ProcessUndoMenu(Sender: TObject);
 var i,j: Integer;
 begin
+(*
   j:=(Sender as TMenuItem).Tag;//номер выбранной команды в списке undo
   for i:=data.UndoList.current-1 downto j do data.Undo;
+  *)
 end;
 
 procedure TForm1.ProcessRedoMenu(Sender: TObject);
 var i,j: Integer;
 begin
+(*
   j:=(Sender as TMenuItem).Tag; //номер выбранной команды в списке undo
   for i:=data.UndoList.current to j do data.Redo;
+  *)
 end;
 
 procedure TForm1.menuUndoListPopup(Sender: TObject);
@@ -785,6 +791,7 @@ var item: TMenuItem;
 begin
   menuUndoList.Items.Clear;
   j:=0;
+(*
   for i:=data.UndoList.current-1 downto 0 do begin
     item:=TMenuItem.Create(nil);
     item.Caption:=(data.UndoList.components[i] as TAbstractCommand).caption;
@@ -794,6 +801,7 @@ begin
     menuUndoList.Items.Insert(j,item);
     inc(j);
   end;
+  *)
 end;
 
 procedure TForm1.menuRedoListPopup(Sender: TObject);
@@ -802,6 +810,7 @@ var item: TMenuItem;
 begin
   menuRedoList.Items.Clear;
   j:=0;
+(*
   for i:=data.UndoList.current to data.UndoList.count-1 do begin
     item:=TMenuItem.Create(nil);
     item.Caption:=(data.UndoList.components[i] as TAbstractCommand).caption;
@@ -811,11 +820,17 @@ begin
     menuRedoList.Items.Insert(j,item);
     inc(j);
   end;
+  *)
 end;
 
 procedure TForm1.btnDataToClipbrdClick(Sender: TObject);
 begin
   Clipboard.AsText:=data.coord.t.AsTabbedText;
+end;
+
+procedure TForm1.N3Click(Sender: TObject);
+begin
+  frmHistory.Show;
 end;
 
 end.

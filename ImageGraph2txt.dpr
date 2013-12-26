@@ -23,7 +23,8 @@ uses
   zlibpas in '..\pngimage\zlibpas.pas',
   FormPreferences in 'FormPreferences.pas' {frmPrefs},
   ImageGraph2Txt_tools in 'ImageGraph2Txt_tools.pas',
-  family_of_curves_lib in '..\lib\family_of_curves_lib.pas';
+  family_of_curves_lib in '..\lib\family_of_curves_lib.pas',
+  FormHistory in 'FormHistory.pas' {frmHistory};
 
 {$R *.res}
 
@@ -32,5 +33,6 @@ begin
   Application.Title := 'image graph to text';
   Application.CreateForm(TForm1, Form1);
   Application.CreateForm(TfrmPrefs, frmPrefs);
+  Application.CreateForm(TfrmHistory, frmHistory);
   Application.Run;
 end.
