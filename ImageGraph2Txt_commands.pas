@@ -10,25 +10,17 @@ type
   TAddPointCommand=class(TAbstractCommand)
   private
     _x,_y: Real; //точка, которую мы и хотели добавить
+    fxprev,fyprev: Real; //точка, которую мы затерли, добавл€€ свою
+    fPointExisted: Boolean; //а была ли точка?
     procedure ReadPoint(reader: TReader);
     procedure WritePoint(writer: TWriter);
+    procedure ReadLastPoint(reader: TReader);
+    procedure WriteLastPoint(writer: TWriter);
   protected
     procedure DefineProperties(filer: TFiler); override;
   public
+    constructor Create(AOwner: TComponent); overload; override;
     constructor Create(X,Y: Real); reintroduce; overload;
-    function Execute: boolean; override;
-    function Undo: boolean; override;
-    function caption: string; override;
-  end;
-
-  TChangeBoolCommand=class(TAbstractCommand)
-  private
-    adr: ^Boolean;
-    val: Boolean;
-    _name: string;
-    _func: TChangeBoolFunc;
-  public
-    constructor Create(var addr: Boolean;func: TChangeBoolFunc;value: Boolean;name: string); reintroduce; overload;
     function Execute: boolean; override;
     function Undo: boolean; override;
     function caption: string; override;
@@ -98,6 +90,7 @@ type
     fbackupZeroPicked: Boolean;
     fdone: Boolean;
   public
+    constructor Create(AOwner: TComponent); overload; override;
     constructor Create(x0,y0: Integer); reintroduce; overload;
 
     function Execute: boolean; override;
@@ -118,6 +111,7 @@ type
     fx,fy,fbackup: Integer;
     fdone: Boolean;
   public
+    constructor Create(AOwner: TComponent); overload; override;
     constructor Create(x,y: Integer); reintroduce; overload;
 
     function Execute: boolean; override;
@@ -140,9 +134,16 @@ uses imagegraph2txt_data,types;
 (*
                   AddPoint
                                         *)
+constructor TAddPointCommand.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  fImageIndex:=11;
+  fPointExisted:=false;
+end;
+
 constructor TAddPointCommand.Create(X,Y: Real);
 begin
-  inherited Create(nil);
+  Create(nil);
   _x:=X;
   _y:=Y;
 end;
@@ -151,12 +152,16 @@ function TAddPointCommand.Execute: boolean;
 var data: TImageGraph2TxtDocument;
 begin
   data:=FindOwner as TImageGraph2TxtDocument;
+  if data.coord.raw_data.FindPoint(_x,fXPrev,fYPrev) then
+    fPointExisted:=true;
   Result:=data.coord.addpoint(_x,_y);
 end;
 
 function TAddPointCommand.Undo: boolean;
 begin
   Result:=(FindOwner as TImageGraph2TxtDocument).coord.deletepoint(_x);
+  if Result and fPointExisted then
+    (FindOwner as TImageGraph2TxtDocument).coord.AddPoint(fXPrev,fYPrev);
 end;
 
 function TAddPointCommand.caption: string;
@@ -167,6 +172,7 @@ end;
 procedure TAddPointCommand.DefineProperties(filer: TFiler);
 begin
   filer.DefineProperty('point',ReadPoint,WritePoint,true); //и снова не будем жадничать
+  filer.DefineProperty('PrevPoint',ReadLastPoint,WriteLastPoint,fPointExisted);
 end;
 
 procedure TAddPointCommand.ReadPoint(reader: TReader);
@@ -177,6 +183,15 @@ begin
   reader.ReadListEnd;
 end;
 
+procedure TAddPointCommand.ReadLastPoint(reader: TReader);
+begin
+  reader.ReadListBegin;
+  fxprev:=reader.ReadFloat;
+  fyprev:=reader.ReadFloat;
+  reader.ReadListEnd;
+  fPointExisted:=true;
+end;
+
 procedure TAddPointCommand.WritePoint(writer: TWriter);
 begin
   writer.WriteListBegin;
@@ -185,36 +200,12 @@ begin
   writer.WriteListEnd;
 end;
 
-(*
-              ChangeBool
-                                          *)
-constructor TChangeBoolCommand.Create(var addr: Boolean; func: TChangeBoolFunc; value: boolean;name: string);
+procedure TAddPointCommand.WriteLastPoint(writer: TWriter);
 begin
-  inherited Create(nil);
-  adr:=@addr;
-  val:=value;
-  if val then _name:='¬ключить '+name
-  else _name:='—бросить '+name;
-  _func:=func;
-end;
-
-function TChangeBoolCommand.Execute: boolean;
-begin
-  Result:=((adr^) xor val);
-  if Result then begin
-    _func(adr^);
-    val:=not val;
-  end;
-end;
-
-function TChangeBoolCommand.Undo: boolean;
-begin
-  Result:=execute;
-end;
-
-function TChangeBoolCommand.caption: string;
-begin
-  Result:=_name;
+  writer.WriteListBegin;
+  writer.WriteFloat(fxprev);
+  writer.WriteFloat(fyprev);
+  writer.WriteListEnd;
 end;
 
 (*
@@ -225,6 +216,7 @@ constructor TClearPointsCommand.Create(owner: TComponent);
 begin
   inherited Create(owner);
   fbackup:=table_func.Create(self);
+  fImageIndex:=14;
 end;
 
 constructor TClearPointsCommand.Create;
@@ -270,6 +262,7 @@ begin
   inherited Create(owner);
   fbackup:=TPngObject.CreateBlank(color_RGB,8,0,0);
   done:=false;
+  fImageIndex:=1;
 end;
 
 constructor TLoadImageCommand.New(btmp: TBitmap);
@@ -339,6 +332,7 @@ begin
   fBackUpBottom.Filters:=[pfNone,pfSub,pfUp,pfAverage,pfPaeth];
   fBackUpTop:=TPngObject.CreateBlank(color_RGB,8,0,0);
   fBackUpTop.Filters:=[pfNone,pfSub,pfUp,pfAverage,pfPaeth];
+  fImageIndex:=9;
 end;
 
 constructor TCropImageCommand.Create(Left,Top,Right,Bottom: Integer);
@@ -480,9 +474,15 @@ end;
 (*
             TSetZeroCommand
                                     *)
+constructor TSetZeroCommand.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  fImageIndex:=10;
+end;
+
 constructor TSetZeroCommand.Create(x0,y0: Integer);
 begin
-  inherited Create(nil);
+  Create(nil);
   fx:=x0;
   fy:=y0;
   done:=false;
@@ -534,9 +534,15 @@ end;
 (*
           TSetAxisCommand
                                       *)
+constructor TSetAxisCommand.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  fImageIndex:=10;
+end;
+
 constructor TSetAxisCommand.Create(x,y: Integer);
 begin
-  inherited Create(nil);
+  Create(nil);
   fx:=x;
   fy:=y;
   fdone:=false;

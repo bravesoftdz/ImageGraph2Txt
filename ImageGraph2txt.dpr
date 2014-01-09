@@ -24,7 +24,8 @@ uses
   FormPreferences in 'FormPreferences.pas' {frmPrefs},
   ImageGraph2Txt_tools in 'ImageGraph2Txt_tools.pas',
   family_of_curves_lib in '..\lib\family_of_curves_lib.pas',
-  FormHistory in 'FormHistory.pas' {frmHistory};
+  abstract_document_actions in '..\lib\CautiousEditPack\abstract_document_actions.pas',
+  FormHistory in '..\lib\CautiousEditPack\FormHistory.pas' {frmHistory};
 
 {$R *.res}
 
