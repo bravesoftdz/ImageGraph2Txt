@@ -85,8 +85,6 @@ type
     btnUndo: TToolButton;
     btnRedo: TToolButton;
     ToolButton2: TToolButton;
-    menuUndoList: TPopupMenu;
-    menuRedoList: TPopupMenu;
     btnDataToClipbrd: TButton;
     N3: TMenuItem;
     AbstractDocumentActionList1: TAbstractDocumentActionList;
@@ -94,6 +92,12 @@ type
     OpenProjectAction1: TOpenProjectAction;
     SaveProjectAsAction1: TSaveProjectAsAction;
     SaveProjectAction1: TSaveProjectAction;
+    Action1: TAction;
+    DocUndoAction1: TDocUndoAction;
+    DocRedoAction1: TDocRedoAction;
+    UndoPopup1: TUndoPopup;
+    RedoPopup1: TRedoPopup;
+    DocShowHistoryAction1: TDocShowHistoryAction;
     procedure btnLoadImageClick(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -121,7 +125,6 @@ type
     procedure LabeledEdit2Change(Sender: TObject);
     procedure LabeledEdit3Change(Sender: TObject);
     procedure Memo1Change(Sender: TObject);
-    procedure btnRedoClick(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure FormMouseWheelDown(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
@@ -133,14 +136,11 @@ type
     procedure menuZoomFitToPageClick(Sender: TObject);
     procedure menuZoomPlusClick(Sender: TObject);
     procedure menuZoomMinusClick(Sender: TObject);
-    procedure menuUndoClick(Sender: TObject);
-    procedure menuRedoClick(Sender: TObject);
     procedure menuLoadImageClick(Sender: TObject);
     procedure menuPasteClick(Sender: TObject);
     procedure menuSaveImageAsClick(Sender: TObject);
     procedure menuClearDataPointsClick(Sender: TObject);
     procedure menuSaveDataPointsClick(Sender: TObject);
-    procedure btnUndoClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnAddPointsToolClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -152,12 +152,9 @@ type
     procedure btnPasteClick(Sender: TObject);
     procedure btnZoomInClick(Sender: TObject);
     procedure btnZoomOutClick(Sender: TObject);
-    procedure menuUndoListPopup(Sender: TObject);
-    procedure ProcessUndoMenu(Sender: TObject);
-    procedure menuRedoListPopup(Sender: TObject);
-    procedure ProcessRedoMenu(Sender: TObject);
     procedure btnDataToClipbrdClick(Sender: TObject);
     procedure N3Click(Sender: TObject);
+    procedure MakeConnections(Sender: TObject);
   private
     { Private declarations }
   public
@@ -183,12 +180,6 @@ implementation
 procedure refresh_undo_gui;
 begin
   with Form1 do begin
-    menuUndo.Enabled:=data.UndoTree.UndoEnabled;
-    menuRedo.Enabled:=data.UndoTree.RedoEnabled;
-
-    btnUndo.Enabled:=menuUndo.Enabled;
-    btnRedo.Enabled:=menuRedo.Enabled;
-
     txtX0.Text:=FloatToStr(data.coord.x0);
     txtY0.Text:=FloatToStr(data.coord.y0);
     txtXmax.Text:=FloatToStr(data.coord.xmax);
@@ -266,10 +257,9 @@ begin
   repaint_graph;
 end;
 
-procedure make_connections;
+procedure TForm1.MakeConnections(Sender: TObject);
 var item: TMenuItem;
 begin
-  data.onDocumentChange:=form1.gui_refresh;
   data.coord.image:=form1.Image1;
   data.StatusPanel:=form1.StatusBar1.Panels[0];
   if Assigned(data.tool) then begin
@@ -287,12 +277,14 @@ procedure Load_project(FileName: string);
 var tmp: TImageGraph2TxtDocument;
 begin
   tmp:=TImageGraph2TxtDocument.LoadFromFile(FileName);
-  //если все в порядке (не выгрузилось), то сменим указатели
+
   data.Free;
   data:=tmp;
-  //таким образом, если проект не загрузился, предыдущий не потеряется.
-  //и попытка освободить несуществующий объект тоже не будет предпринята
-  make_connections;
+
+  data.FileName:='';
+  data.onLoad:=form1.MakeConnections;
+  data.onDocumentChange:=form1.gui_refresh;
+  data.DoLoad;
 end;
 
 procedure TForm1.btnLoadImageClick(Sender: TObject);
@@ -316,8 +308,9 @@ pic:=TPicture.Create;
 AbstractDocumentActionList1.doc:=@data;
 
 data:=TImageGraph2TxtDocument.Create(nil);
-make_connections;
-
+data.onLoad:=MakeConnections;
+data.onDocumentChange:=gui_refresh;
+data.DoLoad;
 end;
 
 procedure TForm1.txtX0Change(Sender: TObject);
@@ -464,16 +457,6 @@ begin
 end;
 
 
-procedure TForm1.btnUndoClick(Sender: TObject);
-begin
-  menuUndoClick(nil);
-end;
-
-procedure TForm1.btnRedoClick(Sender: TObject);
-begin
-  menuRedoClick(nil);
-end;
-
 procedure TForm1.Button3Click(Sender: TObject);
 begin
   if Savetxt.Execute then begin
@@ -560,16 +543,6 @@ begin
   data.scale:=data.scale/sqrt(2);
   reset_picture;
   repaint_graph;
-end;
-
-procedure TForm1.menuUndoClick(Sender: TObject);
-begin
-  data.Undo;
-end;
-
-procedure TForm1.menuRedoClick(Sender: TObject);
-begin
-  data.redo;
 end;
 
 procedure TForm1.menuLoadImageClick(Sender: TObject);
@@ -705,62 +678,6 @@ begin
   menuZoomMinus.Click;
 end;
 
-
-procedure TForm1.ProcessUndoMenu(Sender: TObject);
-var i,j: Integer;
-begin
-(*
-  j:=(Sender as TMenuItem).Tag;//номер выбранной команды в списке undo
-  for i:=data.UndoList.current-1 downto j do data.Undo;
-  *)
-end;
-
-procedure TForm1.ProcessRedoMenu(Sender: TObject);
-var i,j: Integer;
-begin
-(*
-  j:=(Sender as TMenuItem).Tag; //номер выбранной команды в списке undo
-  for i:=data.UndoList.current to j do data.Redo;
-  *)
-end;
-
-procedure TForm1.menuUndoListPopup(Sender: TObject);
-var item: TMenuItem;
-    i,j: Integer;
-begin
-  menuUndoList.Items.Clear;
-  j:=0;
-(*
-  for i:=data.UndoList.current-1 downto 0 do begin
-    item:=TMenuItem.Create(nil);
-    item.Caption:=(data.UndoList.components[i] as TAbstractCommand).caption;
-    item.Tag:=i;
-    item.OnClick:=ProcessUndoMenu;
-
-    menuUndoList.Items.Insert(j,item);
-    inc(j);
-  end;
-  *)
-end;
-
-procedure TForm1.menuRedoListPopup(Sender: TObject);
-var item: TMenuItem;
-    i,j: Integer;
-begin
-  menuRedoList.Items.Clear;
-  j:=0;
-(*
-  for i:=data.UndoList.current to data.UndoList.count-1 do begin
-    item:=TMenuItem.Create(nil);
-    item.Caption:=(data.UndoList.components[i] as TAbstractCommand).caption;
-    item.Tag:=i;
-    item.OnClick:=ProcessRedoMenu;
-
-    menuRedoList.Items.Insert(j,item);
-    inc(j);
-  end;
-  *)
-end;
 
 procedure TForm1.btnDataToClipbrdClick(Sender: TObject);
 begin
