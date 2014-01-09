@@ -7,8 +7,8 @@ uses
   Dialogs, table_func_lib, ExtCtrls, ExtDlgs, StdCtrls,coord_system_lib,
   TeEngine, Series, TeeProcs, Chart,Clipbrd, ComCtrls,math, Buttons,GraphicEx,command_class_lib,
   imageGraph2Txt_Commands, XPMan, ImgList, ToolWin, streaming_class_lib,imagegraph2txt_data,pngimage,
-  Menus,FormPreferences,ImageGraph2Txt_tools,family_of_curves_lib,formHistory,
-  abstract_document_actions, ActnList;
+  Menus,FormPreferences,ImageGraph2Txt_tools,family_of_curves_lib,
+  abstract_document_actions, ActnList, FormHistory;
 
 type
   TForm1 = class(TForm)
@@ -686,7 +686,7 @@ end;
 
 procedure TForm1.N3Click(Sender: TObject);
 begin
-  frmHistory.Show;
+  AbstractDocumentActionList1.ShowHistory;  
 end;
 
 end.
