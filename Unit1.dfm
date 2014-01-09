@@ -1,8 +1,8 @@
 object Form1: TForm1
-  Left = 372
-  Top = 607
-  Width = 595
-  Height = 380
+  Left = 256
+  Top = 255
+  Width = 807
+  Height = 481
   Caption = 'graph2txt v. 0.29'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -21,25 +21,25 @@ object Form1: TForm1
   OnMouseWheelUp = FormMouseWheelUp
   OnShow = FormShow
   DesignSize = (
-    587
-    334)
+    799
+    435)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
     Left = 0
     Top = 56
-    Width = 582
-    Height = 89
+    Width = 794
+    Height = 190
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     DesignSize = (
-      578
-      85)
+      790
+      186)
     object Image1: TImage
       Left = 0
       Top = 0
-      Width = 582
-      Height = 89
+      Width = 794
+      Height = 190
       Cursor = crCross
       Anchors = [akLeft, akTop, akRight, akBottom]
       AutoSize = True
@@ -50,8 +50,8 @@ object Form1: TForm1
   end
   object PageControl1: TPageControl
     Left = 0
-    Top = 152
-    Width = 578
+    Top = 253
+    Width = 790
     Height = 145
     ActivePage = TabSheet2
     Anchors = [akLeft, akRight, akBottom]
@@ -277,8 +277,8 @@ object Form1: TForm1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 308
-    Width = 587
+    Top = 409
+    Width = 799
     Height = 26
     AutoHint = True
     Panels = <
@@ -293,7 +293,7 @@ object Form1: TForm1
   object ToolBar1: TToolBar
     Left = 0
     Top = 0
-    Width = 587
+    Width = 799
     Height = 57
     ButtonHeight = 40
     ButtonWidth = 40
