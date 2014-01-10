@@ -24,7 +24,8 @@ uses
   FormPreferences in 'FormPreferences.pas' {frmPrefs},
   ImageGraph2Txt_tools in 'ImageGraph2Txt_tools.pas',
   family_of_curves_lib in '..\lib\family_of_curves_lib.pas',
-  abstract_document_actions in '..\lib\CautiousEditPack\abstract_document_actions.pas';
+  abstract_document_actions in '..\lib\CautiousEditPack\abstract_document_actions.pas',
+  FormHistory in '..\lib\CautiousEditPack\formHistory.pas' {frmHistory};
 
 {$R *.res}
 
@@ -33,5 +34,6 @@ begin
   Application.Title := 'image graph to text';
   Application.CreateForm(TForm1, Form1);
   Application.CreateForm(TfrmPrefs, frmPrefs);
+  Application.CreateForm(TfrmHistory, frmHistory);
   Application.Run;
 end.
