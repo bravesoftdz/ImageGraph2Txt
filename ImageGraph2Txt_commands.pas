@@ -2,7 +2,7 @@ unit ImageGraph2Txt_commands;
 
 interface
 
-uses command_class_lib,coord_system_lib,sysUtils,table_func_lib,classes,graphics,pngimage;
+uses command_class_lib,coord_system_lib,sysUtils,table_func_lib,classes,graphics,pngimage,streaming_class_lib;
 
 type
   TChangeBoolFunc=procedure(var adr: Boolean) of object;
@@ -51,8 +51,8 @@ type
     function Execute: boolean; override;
     function Undo: boolean; override;
     function Caption: string; override;
+    function EqualsByAnyOtherName(what: TStreamingClass):boolean; override;
   published
-    property done: Boolean read fdone write fdone;
     property backup: TPngObject read fbackup write fbackup;
   end;
 
@@ -261,7 +261,7 @@ constructor TLoadImageCommand.Create(owner: TComponent);
 begin
   inherited Create(owner);
   fbackup:=TPngObject.CreateBlank(color_RGB,8,0,0);
-  done:=false;
+  fbackup.Filters:=[pfNone,pfSub,pfUp,pfAverage,pfPaeth];
   fImageIndex:=1;
 end;
 
@@ -281,7 +281,6 @@ function TLoadImageCommand.Execute: Boolean;
 var img: TPngObject;
     tmp: TPngObject;
 begin
-  if not done then begin
    (FindOwner as TImageGraph2TxtDocument).scaled:=false;
     img:=(FindOwner as TImagegraph2txtDocument).Btmp;
     tmp:=TPngObject.Create;
@@ -289,16 +288,12 @@ begin
     img.Assign(fbackup);
     fbackup.Assign(tmp);
     tmp.Free;
-    done:=true;
     result:=true;
-  end
-  else result:=false;
 end;
 
 function TLoadImageCommand.Undo: Boolean;
 var img,tmp: TPngObject;
 begin
-  if done then begin
     (FindOwner as TImageGraph2TxtDocument).scaled:=false;
     img:=(FindOwner as TImagegraph2txtDocument).Btmp;
     tmp:=TPngObject.Create;
@@ -306,17 +301,32 @@ begin
     img.Assign(fbackup);
     fbackup.Assign(tmp);
     tmp.Free;
-    done:=false;
     result:=true;
-  end
-  else result:=false;
 end;
 
 function TLoadImageCommand.Caption: string;
 begin
-  Result:='Load image';
+  Result:='Загрузить изображение';
 end;
 
+function TLoadImageCommand.EqualsByAnyOtherName(what: TStreamingClass): boolean;
+var t: TPngObject;
+    i,j: Integer;
+    ptr1,ptr2: pByteArray;
+begin
+  Result:=false;
+  if what is TLoadImageCommand then begin
+    t:=TLoadImageCommand(what).fbackup;
+    Result:=true;
+    for j:=0 to fbackup.Height-1 do begin
+      if not CompareMem(fbackup.Scanline[j],t.Scanline[j],fbackup.Width) then begin
+        result:=false;
+        break;
+      end;
+    end;
+  end;
+
+end;
 (*
           TCropImageCommand
                                     *)
