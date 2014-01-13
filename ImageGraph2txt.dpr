@@ -34,6 +34,5 @@ begin
   Application.Title := 'image graph to text';
   Application.CreateForm(TForm1, Form1);
   Application.CreateForm(TfrmPrefs, frmPrefs);
-  Application.CreateForm(TfrmHistory, frmHistory);
   Application.Run;
 end.
