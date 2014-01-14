@@ -43,7 +43,6 @@ type
   TLoadImageCommand=class(TAbstractCommand) //загрузка изображения взамен существующего
   private
     fbackup: TPngObject;
-    fdone: boolean;
   public
     constructor Create(owner: TComponent); overload; override;
     constructor New(btmp: TBitmap); reintroduce; overload;
@@ -311,8 +310,7 @@ end;
 
 function TLoadImageCommand.EqualsByAnyOtherName(what: TStreamingClass): boolean;
 var t: TPngObject;
-    i,j: Integer;
-    ptr1,ptr2: pByteArray;
+    j: Integer;
 begin
   Result:=false;
   if what is TLoadImageCommand then begin
@@ -514,7 +512,6 @@ begin
       coord.zero_picked:=true;
       done:=true;
       result:=true;
-      coord.draw;
     end;
   end;
 end;
@@ -574,7 +571,6 @@ begin
         coord.xmax_picked:=true;
         done:=true;
         result:=true;
-        coord.draw;
       end
       else begin
         if fy=coord.pix_Y0 then result:=false
@@ -587,7 +583,6 @@ begin
           coord.ymax_picked:=true;
           done:=true;
           result:=true;
-          coord.draw;
         end;
       end;
     end
