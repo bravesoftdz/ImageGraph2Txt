@@ -25,7 +25,8 @@ uses
   ImageGraph2Txt_tools in 'ImageGraph2Txt_tools.pas',
   family_of_curves_lib in '..\lib\family_of_curves_lib.pas',
   abstract_document_actions in '..\lib\CautiousEditPack\abstract_document_actions.pas',
-  FormHistory in '..\lib\CautiousEditPack\formHistory.pas' {frmHistory};
+  FormHistory in '..\lib\CautiousEditPack\formHistory.pas' {frmHistory},
+  formMergeOrRewrite in '..\lib\CautiousEditPack\formMergeOrRewrite.pas' {frmMergeOrRewrite};
 
 {$R *.res}
 

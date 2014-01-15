@@ -3,7 +3,7 @@ object Form1: TForm1
   Top = 308
   Width = 807
   Height = 481
-  Caption = 'graph2txt v. 0.29'
+  Caption = 'graph2txt v. 0.30'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
