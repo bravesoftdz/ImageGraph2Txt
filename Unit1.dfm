@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 274
-  Top = 308
+  Left = 263
+  Top = 417
   Width = 807
   Height = 481
   Caption = 'graph2txt v. 0.30'
@@ -21,8 +21,8 @@ object Form1: TForm1
   OnMouseWheelUp = FormMouseWheelUp
   OnShow = FormShow
   DesignSize = (
-    791
-    423)
+    799
+    435)
   PixelsPerInch = 96
   TextHeight = 13
   object ScrollBox1: TScrollBox
@@ -277,8 +277,8 @@ object Form1: TForm1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 397
-    Width = 791
+    Top = 409
+    Width = 799
     Height = 26
     AutoHint = True
     Panels = <
@@ -293,7 +293,7 @@ object Form1: TForm1
   object ToolBar1: TToolBar
     Left = 0
     Top = 0
-    Width = 791
+    Width = 799
     Height = 57
     ButtonHeight = 40
     ButtonWidth = 40
@@ -344,14 +344,14 @@ object Form1: TForm1
       Style = tbsDropDown
     end
     object btnRedo: TToolButton
-      Left = 263
+      Left = 261
       Top = 2
       Action = DocRedoAction1
       DropdownMenu = RedoPopup1
       Style = tbsDropDown
     end
     object ToolButton1: TToolButton
-      Left = 318
+      Left = 314
       Top = 2
       Width = 8
       Caption = 'ToolButton1'
@@ -359,7 +359,7 @@ object Form1: TForm1
       Style = tbsSeparator
     end
     object btnZoomIn: TToolButton
-      Left = 326
+      Left = 322
       Top = 2
       Hint = #1059#1074#1077#1083#1080#1095#1080#1090#1100' '#1084#1072#1089#1096#1090#1072#1073
       Caption = 'btnZoomIn'
@@ -367,7 +367,7 @@ object Form1: TForm1
       OnClick = btnZoomInClick
     end
     object btnZoomOut: TToolButton
-      Left = 366
+      Left = 362
       Top = 2
       Hint = #1059#1084#1077#1085#1100#1096#1080#1090#1100' '#1084#1072#1089#1096#1090#1072#1073
       Caption = 'btnZoomOut'
@@ -375,7 +375,7 @@ object Form1: TForm1
       OnClick = btnZoomOutClick
     end
     object ToolButton2: TToolButton
-      Left = 406
+      Left = 402
       Top = 2
       Width = 8
       Caption = 'ToolButton2'
@@ -383,7 +383,7 @@ object Form1: TForm1
       Style = tbsSeparator
     end
     object btnCropTool: TToolButton
-      Left = 414
+      Left = 410
       Top = 2
       Hint = #1054#1073#1088#1077#1079#1072#1090#1100' '#1082#1088#1072#1103
       Caption = 'btnCropTool'
@@ -393,7 +393,7 @@ object Form1: TForm1
       OnClick = btnCropToolClick
     end
     object btnAddAxesTool: TToolButton
-      Left = 454
+      Left = 450
       Top = 2
       Hint = #1053#1072#1089#1090#1088#1086#1080#1090#1100' '#1086#1089#1080' '#1082#1086#1086#1088#1076#1080#1085#1072#1090
       Caption = 'btnAddAxesTool'
@@ -403,7 +403,7 @@ object Form1: TForm1
       OnClick = btnAddAxesToolClick
     end
     object btnAddPointsTool: TToolButton
-      Left = 494
+      Left = 490
       Top = 2
       Hint = #1044#1086#1073#1072#1074#1080#1090#1100' '#1090#1086#1095#1082#1080' '#1075#1088#1072#1092#1080#1082#1072
       Caption = 'btnAddPointsTool'

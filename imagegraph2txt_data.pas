@@ -22,6 +22,7 @@ public
   StatusPanel: TStatusPanel;
 
   procedure SetSize(X,Y: Integer);
+  procedure Change; override;
   constructor Create(owner: TComponent=nil); override;
 
   destructor Destroy; override;
@@ -38,6 +39,8 @@ published
 end;
 
 implementation
+
+uses IdHash;
 
 constructor TImageGraph2TxtDocument.Create(owner: TComponent);
 begin
@@ -101,6 +104,15 @@ begin
   else
 
 end;
+
+procedure TImageGraph2TxtDocument.Change;
+begin
+  inherited Change;
+  if Assigned(StatusPanel) and (undotree.Current is THashedCOmmand) then
+//    StatusPanel.Text:=TIdHash128.AsHex((undoTree.current as THashedCOmmand).hash);
+    StatusPanel.Text:=TIdHash128.AsHex(Hash);
+end;
+
 
 
 
