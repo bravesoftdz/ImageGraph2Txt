@@ -36,6 +36,7 @@ type
     function Execute: boolean; override;
     function Undo: boolean; override;
     function Caption: string; override;
+    function EqualsByAnyOtherName(what: TStreamingClass): boolean; override;
   published
     property backup: table_func read fbackup write fbackup;
   end;
@@ -136,7 +137,7 @@ type
 
 implementation
 
-uses imagegraph2txt_data,types;
+uses imagegraph2txt_data,types,math;
 (*
                   AddPoint
                                         *)
@@ -262,6 +263,23 @@ begin
   fbackup.assign(temp);
   Result:=true;
   temp.Free;
+end;
+
+function TLoadPointsCommand.EqualsByAnyOtherName(what: TStreamingClass): boolean;
+var t: table_func;
+    i: Integer;
+    coord: TCoord_System;
+begin
+  Result:=false;
+  if what is TLoadPointsCommand then begin
+    t:=TLoadPointsCommand(what).fbackup;
+    coord:=(FindOwner as TImageGraph2TxtDocument).coord;
+    if t.count=fbackup.count then begin
+      for i:=0 to fbackup.count-1 do
+        if (coord.X_axis2pix(fbackup.X[i])<>coord.X_axis2pix(t.X[i])) or (coord.Y_axis2pix(fbackup.Y[i])<>coord.Y_axis2pix(t.Y[i])) then Exit;
+      Result:=true;
+    end;
+  end;
 end;
 
 function TLoadPointsCommand.Caption: string;
