@@ -46,7 +46,7 @@ type
       procedure draw;
       function AddPoint(X,Y: Real): boolean;
       function DeletePoint(X: Real): boolean;
-      procedure Clear;
+      procedure Clear; override;
       procedure ClearAxes;
       procedure ClearAllPoints;
       function X_pix2axis(X: Integer) :Real;

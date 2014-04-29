@@ -158,6 +158,7 @@ type
     procedure N3Click(Sender: TObject);
     procedure MakeConnections(Sender: TObject);
     procedure menuLoadDataPointsClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -698,9 +699,13 @@ begin
   if OpenDialog1.Execute then begin
     t:=table_func.Create;
     t.LoadFromTextFile(OpenDialog1.FileName);
-    data.coord.LoadDataPoints(t);
-    data.Change;
+    data.DispatchCommand(TLoadPointsCommand.New(t));
   end;
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+  menuLoadDataPoints.Click;
 end;
 
 end.

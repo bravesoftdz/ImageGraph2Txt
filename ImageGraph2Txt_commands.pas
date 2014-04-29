@@ -26,18 +26,25 @@ type
     function caption: string; override;
   end;
 
-  TClearPointsCommand=class(TAbstractCommand)
+  TLoadPointsCommand=class(TAbstractCommand)
   private
     fbackup: table_func;
   public
     constructor Create(owner: TComponent); overload; override;
-    constructor Create; reintroduce; overload;
+    constructor New(table: table_func); reintroduce; overload;
     destructor Destroy; override;
     function Execute: boolean; override;
     function Undo: boolean; override;
     function Caption: string; override;
   published
     property backup: table_func read fbackup write fbackup;
+  end;
+
+  TClearPointsCommand=class(TLoadPointsCommand)
+  public
+    constructor Create(owner: TComponent); overload; override;
+    constructor Create; reintroduce; overload;
+    function Caption: string; override;
   end;
 
   TLoadImageCommand=class(TAbstractCommand) //загрузка изображения взамен существующего
@@ -210,44 +217,72 @@ begin
 end;
 
 (*
+          TLoadPointsCommand
+                                      *)
+constructor TLoadPointsCommand.Create(owner: TCOmponent);
+begin
+  inherited Create(owner);
+  fbackup:=table_func.Create(self);
+  fImageIndex:=1;
+end;
+
+constructor TLoadPointsCommand.New(table: table_func);
+begin
+  Create(nil);
+  fbackup.assign(table);
+end;
+
+destructor TLoadPointsCommand.Destroy;
+begin
+  fbackup.Free;
+  inherited Destroy;
+end;
+
+function TLoadPointsCommand.Execute: boolean;
+var coord: TCoord_System;
+    temp: table_func;
+begin
+  coord:=(FindOwner as TImageGraph2TxtDocument).coord;
+  temp:=table_func.Create(nil);
+  temp.assign(coord.raw_data);
+  coord.LoadDataPoints(fbackup);
+  fbackup.assign(temp);
+  Result:=true;
+  temp.Free;
+end;
+
+function TLoadPointsCommand.Undo: boolean;
+var coord: TCoord_System;
+    temp: table_func;
+begin
+  coord:=(FindOwner as TImageGraph2TxtDocument).coord;
+  temp:=table_func.Create(nil);
+  temp.assign(coord.t);
+  coord.raw_data.assign(fbackup);
+  fbackup.assign(temp);
+  Result:=true;
+  temp.Free;
+end;
+
+function TLoadPointsCommand.Caption: string;
+begin
+  Result:='Загрузка точек данных';
+end;
+
+
+(*
             ClearPoints
                                       *)
 
 constructor TClearPointsCommand.Create(owner: TComponent);
 begin
   inherited Create(owner);
-  fbackup:=table_func.Create(self);
   fImageIndex:=14;
 end;
 
 constructor TClearPointsCommand.Create;
 begin
   Create(nil);
-end;
-
-destructor TClearPointsCommand.Destroy;
-begin
-  fbackup.Free;
-  inherited Destroy;
-end;
-
-function TClearPointsCommand.Execute: boolean;
-var coord: TCoord_System;
-begin
-  coord:=(FindOwner as TImageGraph2TxtDocument).coord;
-  fbackup.assign(coord.raw_data);
-  coord.ClearAllPoints;
-  Result:=true;
-end;
-
-function TClearPointsCommand.Undo: boolean;
-var coord: TCoord_System;
-begin
-  coord:=(FindOwner as TImageGraph2TxtDocument).coord;
-  coord.raw_data.assign(fbackup);
-  coord.reprocess_output;
-  fbackup.Clear;
-  Result:=true;
 end;
 
 function TClearPointsCommand.Caption: string;
@@ -622,6 +657,6 @@ end;
 
 initialization
 
-RegisterClasses([TAddPointCommand,TClearPointsCommand,TLoadImageCommand,TCropImageCommand,TSetZeroCommand,TSetAxisCommand]);
+RegisterClasses([TAddPointCommand,TClearPointsCommand,TLoadImageCommand,TCropImageCommand,TSetZeroCommand,TSetAxisCommand,TLoadPointsCommand]);
 
 end.

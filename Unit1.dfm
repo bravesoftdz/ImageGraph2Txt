@@ -280,6 +280,7 @@ object Form1: TForm1
         Height = 25
         Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100
         TabOrder = 9
+        OnClick = Button1Click
       end
     end
   end
