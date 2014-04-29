@@ -98,6 +98,8 @@ type
     UndoPopup1: TUndoPopup;
     RedoPopup1: TRedoPopup;
     DocShowHistoryAction1: TDocShowHistoryAction;
+    Button1: TButton;
+    menuLoadDataPoints: TMenuItem;
     procedure btnLoadImageClick(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -155,6 +157,7 @@ type
     procedure btnDataToClipbrdClick(Sender: TObject);
     procedure N3Click(Sender: TObject);
     procedure MakeConnections(Sender: TObject);
+    procedure menuLoadDataPointsClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -687,6 +690,17 @@ end;
 procedure TForm1.N3Click(Sender: TObject);
 begin
   AbstractDocumentActionList1.ShowHistory;  
+end;
+
+procedure TForm1.menuLoadDataPointsClick(Sender: TObject);
+var t: table_func;
+begin
+  if OpenDialog1.Execute then begin
+    t:=table_func.Create;
+    t.LoadFromTextFile(OpenDialog1.FileName);
+    data.coord.LoadDataPoints(t);
+    data.Change;
+  end;
 end;
 
 end.

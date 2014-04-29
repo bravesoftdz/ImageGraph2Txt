@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 263
-  Top = 417
+  Left = 237
+  Top = 285
   Width = 807
   Height = 481
   Caption = 'graph2txt v. 0.30'
@@ -53,7 +53,7 @@ object Form1: TForm1
     Top = 253
     Width = 790
     Height = 145
-    ActivePage = TabSheet2
+    ActivePage = TabSheet3
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
     object TabSheet2: TTabSheet
@@ -272,6 +272,14 @@ object Form1: TForm1
         Caption = #1042' '#1073#1091#1092#1077#1088' '#1086#1073#1084#1077#1085#1072
         TabOrder = 8
         OnClick = btnDataToClipbrdClick
+      end
+      object Button1: TButton
+        Left = 120
+        Top = 84
+        Width = 73
+        Height = 25
+        Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100
+        TabOrder = 9
       end
     end
   end
@@ -536,6 +544,10 @@ object Form1: TForm1
       object menuClearDataPoints: TMenuItem
         Caption = #1054#1073#1085#1091#1083#1080#1090#1100' '
         OnClick = menuClearDataPointsClick
+      end
+      object menuLoadDataPoints: TMenuItem
+        Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100
+        OnClick = menuLoadDataPointsClick
       end
       object menuSaveDataPoints: TMenuItem
         Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1082#1072#1082'...'

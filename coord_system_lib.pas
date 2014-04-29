@@ -54,6 +54,8 @@ type
       function X_axis2pix(X: Real) :Integer;
       function Y_axis2pix(Y: Real) :Integer;
 
+      procedure LoadDataPoints(new_data: table_func);
+
       constructor Create(owner: TComponent); override;
       procedure AfterConstruction; override;
       destructor Destroy; override;
@@ -171,22 +173,24 @@ begin
   y0_scaled:=Round(pix_y0*scale);
   xmax_scaled:=Round(pix_xmax*scale);
   ymax_scaled:=Round(pix_ymax*scale);
-  image.Canvas.Pen.Width:=3;
-  image.Canvas.Brush.Color:=clBlack;
-  image.Canvas.Pen.Color:=clBlack;
-  image.Canvas.Pen.Style:=psSolid;
-  image.Canvas.Pen.Mode:=pmCopy;
-  if zero_picked then begin
-    image.Canvas.Ellipse(x0_scaled-4,Y0_scaled-4,X0_scaled+4,Y0_scaled+4);
-    if xmax_picked then begin
-      image.Canvas.MoveTo(x0_scaled,y0_scaled);
-      image.Canvas.LineTo(Xmax_scaled,y0_scaled);
-      image.Canvas.Ellipse(xmax_scaled-4,y0_scaled-4,xmax_scaled+4,y0_scaled+4);
-    end;
-    if ymax_picked then begin
-      image.Canvas.MoveTo(x0_scaled,y0_scaled);
-      image.Canvas.LineTo(x0_scaled,Ymax_scaled);
-      image.Canvas.Ellipse(x0_scaled-4,ymax_scaled-4,x0_scaled+4,ymax_scaled+4);
+  if Assigned(image) then begin
+    image.Canvas.Pen.Width:=3;
+    image.Canvas.Brush.Color:=clBlack;
+    image.Canvas.Pen.Color:=clBlack;
+    image.Canvas.Pen.Style:=psSolid;
+    image.Canvas.Pen.Mode:=pmCopy;
+    if zero_picked then begin
+      image.Canvas.Ellipse(x0_scaled-4,Y0_scaled-4,X0_scaled+4,Y0_scaled+4);
+      if xmax_picked then begin
+        image.Canvas.MoveTo(x0_scaled,y0_scaled);
+        image.Canvas.LineTo(Xmax_scaled,y0_scaled);
+        image.Canvas.Ellipse(xmax_scaled-4,y0_scaled-4,xmax_scaled+4,y0_scaled+4);
+      end;
+      if ymax_picked then begin
+        image.Canvas.MoveTo(x0_scaled,y0_scaled);
+        image.Canvas.LineTo(x0_scaled,Ymax_scaled);
+        image.Canvas.Ellipse(x0_scaled-4,ymax_scaled-4,x0_scaled+4,ymax_scaled+4);
+      end;
     end;
   end;
 
@@ -314,6 +318,15 @@ procedure Tcoord_system.ClearAllPoints;
 begin
   raw_data.ClearPoints;
   t.ClearPoints;
+end;
+
+procedure TCoord_system.LoadDataPoints(new_data: table_func);
+var i: Integer;
+begin
+  t.assign(new_data);
+  raw_data.Clear;
+  for i:=0 to t.count-1 do
+    raw_data.addpoint(X_axis2pix(t.X[i]),Y_axis2pix(t.Y[i]));
 end;
 
 end.
