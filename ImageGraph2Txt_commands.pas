@@ -7,7 +7,7 @@ uses command_class_lib,coord_system_lib,sysUtils,table_func_lib,classes,graphics
 type
   TChangeBoolFunc=procedure(var adr: Boolean) of object;
 
-  TAddPointCommand=class(THashedCommand)
+  TAddPointCommand=class(TAbstractCommand)
   private
     _x,_y: Real; //точка, которую мы и хотели добавить
     fxprev,fyprev: Real; //точка, которую мы затерли, добавляя свою
@@ -161,7 +161,7 @@ begin
   data:=FindOwner as TImageGraph2TxtDocument;
   if data.coord.raw_data.FindPoint(_x,fXPrev,fYPrev) then
     fPointExisted:=true;
-  Result:=(data.coord.addpoint(_x,_y)) and (inherited Execute);
+  Result:=(data.coord.addpoint(_x,_y));// and (inherited Execute);
 end;
 
 function TAddPointCommand.Undo: boolean;
@@ -169,7 +169,7 @@ begin
   Result:=(FindOwner as TImageGraph2TxtDocument).coord.deletepoint(_x);
   if Result and fPointExisted then
     (FindOwner as TImageGraph2TxtDocument).coord.AddPoint(fXPrev,fYPrev);
-  Result:=Result and (inherited Undo);
+//  Result:=Result and (inherited Undo);
 end;
 
 function TAddPointCommand.caption: string;
