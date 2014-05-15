@@ -145,7 +145,6 @@ constructor TAddPointCommand.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   fImageIndex:=11;
-  fPointExisted:=false;
 end;
 
 constructor TAddPointCommand.Create(X,Y: Real);
@@ -548,7 +547,6 @@ begin
   Create(nil);
   fx:=x0;
   fy:=y0;
-  done:=false;
 end;
 
 function TSetZeroCommand.Execute: Boolean;

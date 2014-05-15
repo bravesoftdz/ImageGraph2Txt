@@ -87,19 +87,22 @@ type
     ToolButton2: TToolButton;
     btnDataToClipbrd: TButton;
     N3: TMenuItem;
-    AbstractDocumentActionList1: TAbstractDocumentActionList;
-    NewProjectAction1: TNewProjectAction;
-    OpenProjectAction1: TOpenProjectAction;
-    SaveProjectAsAction1: TSaveProjectAsAction;
-    SaveProjectAction1: TSaveProjectAction;
-    Action1: TAction;
-    DocUndoAction1: TDocUndoAction;
-    DocRedoAction1: TDocRedoAction;
     UndoPopup1: TUndoPopup;
     RedoPopup1: TRedoPopup;
-    DocShowHistoryAction1: TDocShowHistoryAction;
     Button1: TButton;
     menuLoadDataPoints: TMenuItem;
+    AbstractDocumentActionList1: TAbstractDocumentActionList;
+    NewProjectAction1: TNewProjectAction;
+    NewProjectAction2: TNewProjectAction;
+    OpenProjectAction1: TOpenProjectAction;
+    SaveProjectAction1: TSaveProjectAction;
+    SaveProjectAsAction1: TSaveProjectAsAction;
+    DocUndoAction1: TDocUndoAction;
+    DocRedoAction1: TDocRedoAction;
+    DocShowHistoryAction1: TDocShowHistoryAction;
+    AddPointTool1: TAddPointTool;
+    AddAxisTool1: TAddAxisTool;
+    CropTool1: TCropTool;
     procedure btnLoadImageClick(Sender: TObject);
     procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -127,7 +130,6 @@ type
     procedure LabeledEdit2Change(Sender: TObject);
     procedure LabeledEdit3Change(Sender: TObject);
     procedure Memo1Change(Sender: TObject);
-    procedure Button3Click(Sender: TObject);
     procedure FormMouseWheelDown(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
     procedure FormMouseWheelUp(Sender: TObject; Shift: TShiftState;
@@ -146,12 +148,6 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure btnAddPointsToolClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    procedure menuCropToolClick(Sender: TObject);
-    procedure menuAddAxesToolClick(Sender: TObject);
-    procedure menuAddPointsToolClick(Sender: TObject);
-    procedure btnCropToolClick(Sender: TObject);
-    procedure btnAddAxesToolClick(Sender: TObject);
-    procedure btnPasteClick(Sender: TObject);
     procedure btnZoomInClick(Sender: TObject);
     procedure btnZoomOutClick(Sender: TObject);
     procedure btnDataToClipbrdClick(Sender: TObject);
@@ -169,9 +165,6 @@ var
   Form1: TForm1;
 
   pic: TPicture;
-//  mouse_down: boolean;
-//  start_P: TPoint;
-//  cur_P: TPoint;
 
   data: TImageGraph2TxtDocument;
   default_dir: string;
@@ -193,6 +186,9 @@ begin
     chkSwapXY.Checked:=data.coord.swapXY;
     colorBox1.Selected:=data.coord.LineColor;
     Combobox1.ItemIndex:=data.coord.raw_data.order;
+
+    if (data.Tool is TAddAxisTool) and (TAddAxisTool(data.Tool)).KillMePls then
+      AddPointTool1.Execute;
   end;
 end;
 
@@ -252,7 +248,7 @@ begin
       end;
     end;
   end;
-  if Assigned(data.tool) then data.tool.Select;
+//  if Assigned(data.tool) then data.tool.Select;
 end;
 
 procedure TForm1.gui_refresh(sender: TObject);
@@ -262,19 +258,20 @@ begin
 end;
 
 procedure TForm1.MakeConnections(Sender: TObject);
-var item: TMenuItem;
+var i: Integer;
 begin
   data.coord.image:=form1.Image1;
   data.StatusPanel:=form1.StatusBar1.Panels[0];
-  if Assigned(data.tool) then begin
-    item:=Form1.FindComponent(data.tool.ButtonName) as TMenuItem;
-    item.Click;
-  end
-  else begin
-    data.tool:=TAddPointTool.Create(data,form1.menuAddPointsTool.Name);
-    form1.menuAddPointsTool.Click;
-  end;
   form1.gui_refresh(data);
+  if Assigned(data.tool) then begin
+    for i:=0 to AbstractDocumentActionList1.ActionCount-1 do
+      if AbstractDocumentActionList1.Actions[i].ClassType=data.Tool.ClassType then begin
+        data.Tool.Select;
+        AbstractDocumentActionList1.Actions[i].Assign(data.Tool);
+        AbstractDocumentActionList1.Actions[i].Execute;
+        break;
+      end;
+  end;
 end;
 
 procedure Load_project(FileName: string);
@@ -282,13 +279,12 @@ var tmp: TImageGraph2TxtDocument;
 begin
   tmp:=TImageGraph2TxtDocument.LoadFromFile(FileName);
 
-  data.Free;
+  data.Release;
   data:=tmp;
 
   data.FileName:='';
-  data.onLoad:=form1.MakeConnections;
   data.onDocumentChange:=form1.gui_refresh;
-  data.DoLoad;
+  data.onLoad:=form1.MakeConnections;
 end;
 
 procedure TForm1.btnLoadImageClick(Sender: TObject);
@@ -300,7 +296,7 @@ procedure TForm1.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   if Assigned(data.tool) then
-  data.tool.MouseDown(Button,Shift,X,Y);
+    data.tool.MouseDown(Button,Shift,X,Y);
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
@@ -374,7 +370,6 @@ procedure TForm1.FormShow(Sender: TObject);
 begin
   if FileExists(CurProjectFilename) then Load_Project(CurProjectFilename);
   Form1.WindowState:=wsMaximized;
-  refresh_undo_gui;
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);
@@ -458,17 +453,6 @@ end;
 procedure TForm1.Memo1Change(Sender: TObject);
 begin
   data.coord.t.description:=Memo1.Lines;
-end;
-
-
-procedure TForm1.Button3Click(Sender: TObject);
-begin
-  if Savetxt.Execute then begin
-//    data.SaveWithUndo:=false;
-    if Savetxt.FilterIndex=1 then data.saveFormat:=fCyr
-    else data.saveFormat:=fBinary;
-    data.SaveToFile(savetxt.FileName);
-  end;
 end;
 
 procedure TForm1.FormMouseWheelDown(Sender: TObject; Shift: TShiftState;
@@ -559,9 +543,7 @@ begin
     btmp.Width:=image1.Picture.Width;
     btmp.Canvas.Draw(0,0,image1.Picture.Graphic);
     data.DispatchCommand(TLoadImageCommand.New(btmp));
-
-//    state:=1;
-//    StatusBar1.Panels[0].Text:='Вырезать прямоугольный участок';
+    btmp.Free;
   end;
 end;
 
@@ -571,8 +553,7 @@ begin
   btmp:=TBitmap.Create;
   btmp.Assign(Clipboard);
   data.DispatchCommand(TLoadImageCommand.New(btmp));
-//  state:=1;
-  StatusBar1.Panels[0].Text:='Вырезать прямоугольный участок';
+  btmp.Free;
 end;
 
 procedure TForm1.menuSaveImageAsClick(Sender: TObject);
@@ -604,7 +585,7 @@ end;
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
 pic.Free;
-data.Free;
+data.Release;
 
 end;
 
@@ -618,58 +599,9 @@ begin
   SetCurrentDir(default_dir);
   data.SaveType:=fCyr;
   data.SaveWithUndo:=true;
-  data.SaveToFile(CurProjectFileName);
-end;
-
-procedure TForm1.menuCropToolClick(Sender: TObject);
-begin
-  menuCropTool.Checked:=true;
-  btnCropTool.Down:=true;
-  if not (data.tool is TCropTool) then begin
-    data.tool.Unselect;
-    data.tool.Free;
-    data.tool:=TCropTool.Create(data,menuCropTool.Name);
-    data.tool.Select;
-  end;
-end;
-
-procedure TForm1.menuAddAxesToolClick(Sender: TObject);
-begin
-  menuAddAxesTool.Checked:=true;
-  btnAddAxesTool.Down:=true;
-  if not (data.tool is TAddAxisTool) then begin
-    data.tool.Unselect;
-    data.tool.Free;
-    data.tool:=TAddAxisTool.Create(data,menuAddAxesTool.Name);
-    data.tool.Select;
-  end;
-end;
-
-procedure TForm1.menuAddPointsToolClick(Sender: TObject);
-begin
-  menuAddPointsTool.Checked:=true;
-  btnAddPointsTool.Down:=true;
-  if not (data.tool is TAddPointTool) then begin
-    data.tool.Unselect;
-    data.tool.Free;
-    data.tool:=TAddPointTool.Create(data,menuAddPointsTool.Name);
-    data.tool.Select;
-  end;
-end;
-
-procedure TForm1.btnCropToolClick(Sender: TObject);
-begin
-  menuCropTool.Click;
-end;
-
-procedure TForm1.btnAddAxesToolClick(Sender: TObject);
-begin
-  menuAddAxesTool.Click;
-end;
-
-procedure TForm1.btnPasteClick(Sender: TObject);
-begin
-  menuPaste.Click;
+  data.FileName:=CurProjectFileName;
+  data.Save;
+//  data.SaveToFile(CurProjectFileName);
 end;
 
 procedure TForm1.btnZoomInClick(Sender: TObject);

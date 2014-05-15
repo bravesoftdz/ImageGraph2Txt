@@ -3,7 +3,7 @@ unit imagegraph2txt_data;
 interface
 
 uses command_class_lib,graphics,classes,coord_system_lib,pngimage,
-streaming_class_lib,ImageGraph2Txt_tools,ComCtrls;
+streaming_class_lib,ImageGraph2Txt_tools,ComCtrls,abstract_document_actions;
 
 type
 
@@ -19,8 +19,6 @@ private
   procedure set_scale(value: Real);
   function get_scaled_btmp: TPngObject;
 public
-  StatusPanel: TStatusPanel;
-
   procedure SetSize(X,Y: Integer);
   procedure Change; override;
   constructor Create(owner: TComponent=nil); override;
@@ -30,7 +28,6 @@ public
   property ScaledBtmp: TPngObject read get_scaled_btmp;
   property scale: Real read fscale write set_scale;
 published
-  tool: TTool;
   property enableSaveWithUndo: Boolean read SaveWithUndo write SaveWithUndo;
   property SaveType: StreamingClassSaveFormat read SaveFormat write SaveFormat;
   property coord: TCoord_System read fCoord write fCoord;

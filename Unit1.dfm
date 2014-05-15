@@ -1,9 +1,9 @@
 object Form1: TForm1
-  Left = 237
-  Top = 285
+  Left = 247
+  Top = 248
   Width = 807
   Height = 481
-  Caption = 'graph2txt v. 0.30'
+  Caption = 'graph2txt v. 0.40'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -53,7 +53,7 @@ object Form1: TForm1
     Top = 253
     Width = 790
     Height = 145
-    ActivePage = TabSheet3
+    ActivePage = TabSheet2
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 1
     object TabSheet2: TTabSheet
@@ -289,7 +289,6 @@ object Form1: TForm1
     Top = 409
     Width = 799
     Height = 26
-    AutoHint = True
     Panels = <
       item
         Text = #1048#1079#1086#1073#1088#1072#1078#1077#1085#1080#1077' '#1085#1077' '#1074#1099#1073#1088#1072#1085#1086
@@ -343,7 +342,6 @@ object Form1: TForm1
       Hint = #1042#1089#1090#1072#1074#1080#1090#1100' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1077' '#1080#1079' '#1073#1091#1092#1077#1088#1072' '#1086#1073#1084#1077#1085#1072
       Caption = 'btnPaste'
       ImageIndex = 4
-      OnClick = btnPasteClick
     end
     object btnUndo: TToolButton
       Left = 208
@@ -394,35 +392,31 @@ object Form1: TForm1
     object btnCropTool: TToolButton
       Left = 410
       Top = 2
-      Hint = #1054#1073#1088#1077#1079#1072#1090#1100' '#1082#1088#1072#1103
-      Caption = 'btnCropTool'
+      Action = CropTool1
       Grouped = True
-      ImageIndex = 9
       Style = tbsCheck
-      OnClick = btnCropToolClick
     end
     object btnAddAxesTool: TToolButton
       Left = 450
       Top = 2
-      Hint = #1053#1072#1089#1090#1088#1086#1080#1090#1100' '#1086#1089#1080' '#1082#1086#1086#1088#1076#1080#1085#1072#1090
-      Caption = 'btnAddAxesTool'
+      Action = AddAxisTool1
       Grouped = True
-      ImageIndex = 10
       Style = tbsCheck
-      OnClick = btnAddAxesToolClick
     end
     object btnAddPointsTool: TToolButton
       Left = 490
       Top = 2
-      Hint = #1044#1086#1073#1072#1074#1080#1090#1100' '#1090#1086#1095#1082#1080' '#1075#1088#1072#1092#1080#1082#1072
-      Caption = 'btnAddPointsTool'
+      Action = AddPointTool1
       Grouped = True
-      ImageIndex = 11
       Style = tbsCheck
-      OnClick = btnAddPointsToolClick
     end
   end
   object OpenPictureDialog1: TOpenPictureDialog
+    Filter = 
+      'All (*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf)|*.jpg;*.jpeg;*.bmp;*.' +
+      'ico;*.emf;*.wmf|JPEG Image File (*.jpg)|*.jpg|JPEG Image File (*' +
+      '.jpeg)|*.jpeg|Bitmaps (*.bmp)|*.bmp|Icons (*.ico)|*.ico|Enhanced' +
+      ' Metafiles (*.emf)|*.emf|Metafiles (*.wmf)|*.wmf'
     Left = 24
     Top = 440
   end
@@ -451,7 +445,6 @@ object Form1: TForm1
     Top = 120
   end
   object MainMenu1: TMainMenu
-    Images = ImageList1
     Left = 240
     Top = 112
     object N1: TMenuItem
@@ -488,19 +481,22 @@ object Form1: TForm1
     object N2: TMenuItem
       Caption = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099
       object menuCropTool: TMenuItem
-        Caption = #1054#1073#1088#1077#1079#1072#1090#1100
+        Action = CropTool1
+        AutoCheck = True
+        GroupIndex = 1
         RadioItem = True
-        OnClick = menuCropToolClick
       end
       object menuAddAxesTool: TMenuItem
-        Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1086#1089#1080
+        Action = AddAxisTool1
+        AutoCheck = True
+        GroupIndex = 1
         RadioItem = True
-        OnClick = menuAddAxesToolClick
       end
       object menuAddPointsTool: TMenuItem
-        Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1090#1086#1095#1082#1080' '#1076#1072#1085#1085#1099#1093
+        Action = AddPointTool1
+        AutoCheck = True
+        GroupIndex = 1
         RadioItem = True
-        OnClick = menuAddPointsToolClick
       end
     end
     object N6: TMenuItem
@@ -3209,50 +3205,6 @@ object Form1: TForm1
       FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000
       000000000000}
   end
-  object AbstractDocumentActionList1: TAbstractDocumentActionList
-    Images = ImageList1
-    ButtonHeight = 40
-    CellPadding = 10
-    Left = 544
-    Top = 8
-    object NewProjectAction1: TNewProjectAction
-      Category = 'AbstractDocumentActions'
-      Caption = #1053#1086#1074#1099#1081' '#1087#1088#1086#1077#1082#1090
-    end
-    object OpenProjectAction1: TOpenProjectAction
-      Category = 'AbstractDocumentActions'
-      Caption = #1054#1090#1082#1088#1099#1090#1100' '#1087#1088#1086#1077#1082#1090
-      OpenDialog.DefaultExt = 'txt'
-      OpenDialog.Filter = #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.dat|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
-    end
-    object SaveProjectAsAction1: TSaveProjectAsAction
-      Category = 'AbstractDocumentActions'
-      Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1087#1088#1086#1077#1082#1090' '#1082#1072#1082'...'
-      SaveDialog.DefaultExt = 'txt'
-      SaveDialog.Filter = #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.dat|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
-    end
-    object SaveProjectAction1: TSaveProjectAction
-      Category = 'AbstractDocumentActions'
-      Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1087#1088#1086#1077#1082#1090
-      SaveDialog.DefaultExt = 'txt'
-      SaveDialog.Filter = #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.dat|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
-    end
-    object Action1: TAction
-      Caption = 'Action1'
-    end
-    object DocUndoAction1: TDocUndoAction
-      Category = 'AbstractDocumentActions'
-      Caption = #1054#1090#1084#1077#1085#1080#1090#1100
-    end
-    object DocRedoAction1: TDocRedoAction
-      Category = 'AbstractDocumentActions'
-      Caption = #1055#1086#1074#1090#1086#1088#1080#1090#1100
-    end
-    object DocShowHistoryAction1: TDocShowHistoryAction
-      Category = 'AbstractDocumentActions'
-      Caption = #1046#1091#1088#1085#1072#1083
-    end
-  end
   object UndoPopup1: TUndoPopup
     Images = ImageList1
     MaxCount = 20
@@ -3268,5 +3220,68 @@ object Form1: TForm1
     ShowHistoryAction = DocShowHistoryAction1
     Left = 144
     Top = 72
+  end
+  object AbstractDocumentActionList1: TAbstractDocumentActionList
+    Images = ImageList1
+    ButtonHeight = 40
+    CellPadding = 10
+    Left = 544
+    Top = 8
+    object NewProjectAction1: TNewProjectAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1053#1086#1074#1099#1081' '#1087#1088#1086#1077#1082#1090
+    end
+    object NewProjectAction2: TNewProjectAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1053#1086#1074#1099#1081' '#1087#1088#1086#1077#1082#1090
+    end
+    object OpenProjectAction1: TOpenProjectAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1054#1090#1082#1088#1099#1090#1100' '#1087#1088#1086#1077#1082#1090
+      OpenDialog.DefaultExt = 'txt'
+      OpenDialog.Filter = #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.dat|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    end
+    object SaveProjectAction1: TSaveProjectAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1087#1088#1086#1077#1082#1090
+      SaveDialog.DefaultExt = 'txt'
+      SaveDialog.Filter = 
+        #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1073#1077#1079' '#1082#1080#1088#1080#1083#1083#1080#1094#1099'|*.dat|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.bin' +
+        '|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    end
+    object SaveProjectAsAction1: TSaveProjectAsAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1087#1088#1086#1077#1082#1090' '#1082#1072#1082'...'
+      SaveDialog.DefaultExt = 'txt'
+      SaveDialog.Filter = 
+        #1058#1077#1082#1089#1090#1086#1074#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.txt|'#1073#1077#1079' '#1082#1080#1088#1080#1083#1083#1080#1094#1099'|*.dat|'#1044#1074#1086#1080#1095#1085#1099#1081' '#1092#1086#1088#1084#1072#1090'|*.bin' +
+        '|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    end
+    object DocUndoAction1: TDocUndoAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1054#1090#1084#1077#1085#1080#1090#1100
+    end
+    object DocRedoAction1: TDocRedoAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1055#1086#1074#1090#1086#1088#1080#1090#1100
+    end
+    object DocShowHistoryAction1: TDocShowHistoryAction
+      Category = 'AbstractDocumentActions'
+      Caption = #1046#1091#1088#1085#1072#1083
+    end
+    object AddPointTool1: TAddPointTool
+      Category = 'ImageGraph2TxtActions'
+      Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1090#1086#1095#1082#1080' '#1076#1072#1085#1085#1099#1093
+    end
+    object AddAxisTool1: TAddAxisTool
+      Category = 'ImageGraph2TxtActions'
+      Caption = #1054#1090#1084#1077#1090#1080#1090#1100' '#1086#1089#1080' '#1082#1086#1086#1088#1076#1080#1085#1072#1090
+      state = sSetZero
+    end
+    object CropTool1: TCropTool
+      Category = 'ImageGraph2TxtActions'
+      Caption = #1054#1073#1088#1077#1079#1072#1090#1100' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1077
+      selected = False
+    end
   end
 end

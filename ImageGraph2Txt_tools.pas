@@ -2,40 +2,44 @@ unit ImageGraph2Txt_tools;
 
 interface
 
-uses Controls,Classes,types;
+uses command_class_lib,Controls,Classes,types;
 
 type
 
-TTool=class(TComponent)
+(*
+TPickTool=class(TTool)
 private
-  fButtonName: string;
+  fPointIndex: Integer; //если -1, значит еще не выбрано ничего
 public
-  constructor Create(owner: TComponent;aButtonName: string); reintroduce;
   procedure Select; virtual; abstract;
   procedure Unselect; virtual; abstract;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); virtual; abstract;
   procedure MouseMove(Shift: TShiftState; X,Y: Integer); virtual; abstract;
   procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual; abstract;
-  procedure SetStatusPanel(text: string);
 published
-  property ButtonName: string read fButtonName write fButtonName;
+  property PointIndex: Integer read fPointIndex write fPointIndex;
 end;
-
-TAddPointTool=class(TTool)
+*)
+TAddPointTool=class(TAbstractToolAction)
 public
   procedure Select; override;
   procedure Unselect; override;
+  constructor Create(owner: TComponent); override;
+  procedure Assign(source: TPersistent); override;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
   procedure MouseMove(Shift: TShiftState; X,Y: Integer); override;
   procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
 end;
 
 TAddAxisToolState=(sSetZero,sSetAxisPoint);
-TAddAxisTool=class(TTool)
+TAddAxisTool=class(TAbstractToolAction)
 private
   fstate: TAddAxisToolState;
   procedure ChangeState(astate: TAddAxisToolState);
 public
+  KillMePls: boolean;
+  constructor Create(owner: TCOmponent); override;
+  procedure Assign(source: TPersistent); override;
   procedure Select; override;
   procedure Unselect; override;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
@@ -46,7 +50,8 @@ published
 end;
 
 TCropToolState=(sSizeTopLeft,sSizeTopRight,sSizeBottomLeft,sSizeBottomRight,sSizeTop,sSizeBottom,sSizeLeft,sSizeRight,sCrop,sDeselect);
-TCropTool=class(TTool)
+
+TCropTool=class(TAbstractToolAction)
 private
   fselected: Boolean; //есть ли уже выбранна€ дл€ обрезки область?
   mouse_down: Boolean; //держитс€ ли нажатой кнопка мыши?
@@ -58,6 +63,8 @@ private
   function scale: Real;
   property state: TCropToolState read fstate write set_state;
 public
+  constructor Create(owner: TComponent); override;
+  procedure Assign(source: TPersistent); override;
   procedure Select; override;
   procedure Unselect; override;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
@@ -71,34 +78,25 @@ published
   property selected: Boolean read fselected write fselected;
 end;
 
+procedure Register;
+
 implementation
 
-uses ImageGraph2Txt_commands,ImageGraph2Txt_data,graphics,ExtCtrls;
+uses ImageGraph2Txt_commands,ImageGraph2Txt_data,graphics,ExtCtrls,ActnList;
 
 const sensitivity:Integer=5;
-(*
-            TTool
-                            *)
-constructor TTool.Create(owner: TComponent; aButtonName: string);
-begin
-  inherited Create(owner);
-  name:='tool';
-  fButtonName:=aButtonName;
-end;
 
-procedure TTool.SetStatusPanel(text: string);
-var data: TImageGraph2TxtDocument;
+
+procedure Register;
 begin
-  if (owner<>nil) then begin
-    data:=owner as TImageGraph2TxtDocument;
-    if data.StatusPanel<>nil then
-      data.StatusPanel.Text:=text;
-  end;
+  RegisterActions('ImageGraph2TxtActions',[TAddPointTool,TAddAxisTool,TCropTool],nil);
+//  RegisterComponents('CautiousEdit',[TAbstractDocumentActionList,TUndoPopup,TRedoPopup]);
 end;
 
 (*
             TAddPointTool
                                   *)
+
 procedure TAddPointTool.Select;
 begin
   SetStatusPanel('ƒобавить точки данных');
@@ -109,10 +107,10 @@ begin
   SetStatusPanel('');
 end;
 
+
 procedure TAddPointTool.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
 var data: TImageGraph2TxtDocument;
 begin
-  Assert(owner<>nil);
   data:=owner as TImageGraph2TxtDocument;
   data.DispatchCommand(TAddPointCommand.Create(X/data.scale,Y/data.scale));
 end;
@@ -125,6 +123,23 @@ end;
 procedure TAddPointTool.MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
 begin
 
+end;
+
+constructor TAddPointTool.Create(owner: TComponent);
+begin
+  inherited Create(owner);
+  GroupIndex:=1; //у нас пока только одна группа, да
+  ImageIndex:=11;
+  AutoCheck:=true;
+  Caption:='ƒобавить точки данных';
+  Hint:=Caption;
+end;
+
+procedure TAddPointTool.Assign(source: TPersistent);
+begin
+  if not (source is TAddPointTool) then
+    inherited Assign(source);
+  //нам и не нужно ничего присваивать!
 end;
 
 (*
@@ -140,6 +155,7 @@ begin
   end;
 end;
 
+
 procedure TAddAxisTool.Select;
 begin
   ChangeState(state);
@@ -148,6 +164,24 @@ end;
 procedure TAddAxisTool.Unselect;
 begin
   SetStatusPanel('');
+end;
+
+
+constructor TAddAxisTool.Create(owner: TComponent);
+begin
+  inherited Create(owner);
+  GroupIndex:=1;
+  ImageIndex:=10;
+  AutoCheck:=true;
+  Caption:='ќтметить оси координат';
+  Hint:=Caption;
+end;
+
+procedure TAddAxisTool.Assign(source: TPersistent);
+begin
+  if source is TAddAxisTool then
+    fState:=TAddAxisTool(source).fstate
+  else inherited Assign(source);
 end;
 
 procedure TAddAxisTool.MouseDown(button: TMouseButton;shift: TShiftState; X,Y: Integer);
@@ -166,7 +200,11 @@ begin
   end
   else begin
     data.DispatchCommand(TSetAxisCommand.Create(Round(X/s),Round(Y/s)));
-    if (data.coord.xmax_picked) and (data.coord.ymax_picked) then ChangeState(sSetZero);
+    if (data.coord.xmax_picked) and (data.coord.ymax_picked) then begin
+      KillMePls:=true; //ChangeState(sSetZero);
+      if Assigned(data.onDocumentChange) then
+        data.onDocumentChange(self);
+    end;
   end;
 end;
 
@@ -184,6 +222,29 @@ end;
       TCropTool
                       *)
 
+constructor TCropTool.Create(owner: TComponent);
+begin
+  inherited Create(owner);
+  GroupIndex:=1;
+  ImageIndex:=9;
+  AutoCheck:=true;
+  Caption:='ќбрезать изображение';
+  Hint:=Caption;
+end;
+
+procedure TCropTool.Assign(source: TPersistent);
+var s: TCropTool;
+begin
+  if source is TCropTool then begin
+    s:=TCropTool(source);
+    curx:=s.curx;
+    cury:=s.cury;
+    startx:=s.startx;
+    starty:=s.starty;
+    selected:=s.selected;
+  end;
+end;
+
 function TCropTool.scale: Real;
 begin
   Result:=(owner as tImageGraph2TxtDocument).scale;
@@ -192,14 +253,16 @@ end;
 procedure TCropTool.Kill_selection;
 var canv: TCanvas;
 begin
-  canv:=(owner as TImageGraph2TxtDocument).coord.image.Canvas;
-  with Canv do begin
-    Pen.Mode:=pmNotXor;
-    pen.Style:=psDot;
-    pen.Width:=1;
-    pen.Color:=clBlack;
-    brush.Color:=clWhite;
-    Rectangle(Round(startX*scale),Round(startY*scale),Round(curX*scale),Round(curY*scale));
+  if Assigned(owner) then begin
+    canv:=(owner as TImageGraph2TxtDocument).coord.image.Canvas;
+    with Canv do begin
+      Pen.Mode:=pmNotXor;
+      pen.Style:=psDot;
+      pen.Width:=1;
+      pen.Color:=clBlack;
+      brush.Color:=clWhite;
+      Rectangle(Round(startX*scale),Round(startY*scale),Round(curX*scale),Round(curY*scale));
+    end;
   end;
 end;
 
@@ -227,7 +290,8 @@ procedure TCropTool.Unselect;
 begin
   if selected then kill_selection;
   SetStatusPanel('');
-  (owner as TImageGraph2TxtDocument).coord.image.Cursor:=crCross;
+  if Assigned(owner) then
+    (owner as TImageGraph2TxtDocument).coord.image.Cursor:=crCross;
 end;
 
 procedure TCropTool.MouseDown(button: TMouseButton;shift: TShiftState; X,Y: Integer);
@@ -370,6 +434,7 @@ if selected then begin
   end;
 end
 else begin
+  img.Cursor:=crCross;
   if mouse_down then begin
     kill_selection; //стираем старую рамочку, если такова€ имелась
     curX:=Xsc;
@@ -383,6 +448,6 @@ end;
 
 
 initialization
-RegisterClasses([TTool,TAddPointTool, TAddAxisTool, TCropTool]);
+RegisterClasses([TAddPointTool, TAddAxisTool, TCropTool]);
 
 end.
